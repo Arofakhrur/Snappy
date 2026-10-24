@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1800" width="4in" height="6in">
+  <defs>
+    <style>
+      .guide-border { stroke: #CBD5E1; stroke-width: 2; fill: none; }
+      .cut-line { stroke: #EF4444; stroke-width: 3; stroke-dasharray: 10 10; fill: none; }
+      .safe-margin { stroke: #10B981; stroke-width: 2; stroke-dasharray: 4 4; fill: none; }
+      .sheet-title { font-family: 'Inter', -apple-system, sans-serif; font-size: 32px; font-weight: 800; fill: #1E293B; }
+      .sheet-sub { font-family: 'Inter', -apple-system, sans-serif; font-size: 18px; font-weight: 600; fill: #64748B; }
+      .strip-zone { fill: #F8FAFC; stroke: #94A3B8; stroke-width: 2; }
+      .cut-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 18px; font-weight: 700; fill: #EF4444; }
+    </style>
+  </defs>
+
+  <!-- Sheet Background -->
+  <rect x="0" y="0" width="1200" height="1800" fill="#FFFFFF"/>
+
+  <!-- Left Strip Zone (600 x 1800) -->
+  <g id="strip-left">
+    <rect x="0" y="0" width="600" height="1800" class="strip-zone"/>
+    <!-- Safe print area -->
+    <rect x="36" y="36" width="528" height="1728" class="safe-margin"/>
+    <!-- Center text indicator -->
+    <text x="300" y="900" class="sheet-title" text-anchor="middle" fill="#64748B">STRIP 1 (2 × 6″)</text>
+    <text x="300" y="940" class="sheet-sub" text-anchor="middle">Auto-duplicated from custom artwork</text>
+  </g>
+
+  <!-- Right Strip Zone (600 x 1800) -->
+  <g id="strip-right">
+    <rect x="600" y="0" width="600" height="1800" class="strip-zone"/>
+    <!-- Safe print area -->
+    <rect x="636" y="36" width="528" height="1728" class="safe-margin"/>
+    <!-- Center text indicator -->
+    <text x="900" y="900" class="sheet-title" text-anchor="middle" fill="#64748B">STRIP 2 (2 × 6″)</text>
+    <text x="900" y="940" class="sheet-sub" text-anchor="middle">Duplicate copy for 2nd guest</text>
+  </g>
+
+  <!-- Center Cutting Guide Line (X = 600) -->
+  <line x1="600" y1="0" x2="600" y2="1800" class="cut-line"/>
+
+  <!-- Cut scissors icon and text at top and bottom -->
+  <g transform="translate(600, 50)">
+    <circle cx="0" cy="0" r="26" fill="#FEE2E2" stroke="#EF4444" stroke-width="2"/>
+    <text x="0" y="6" text-anchor="middle" font-size="20">✂️</text>
+    <text x="0" y="44" class="cut-text" text-anchor="middle">CUT HERE</text>
+  </g>
+
+  <g transform="translate(600, 1750)">
+    <circle cx="0" cy="0" r="26" fill="#FEE2E2" stroke="#EF4444" stroke-width="2"/>
+    <text x="0" y="6" text-anchor="middle" font-size="20">✂️</text>
+    <text x="0" y="-36" class="cut-text" text-anchor="middle">CUT HERE</text>
+  </g>
+
+  <!-- Overall Outer Margin Indicator -->
+  <rect x="10" y="10" width="1180" height="1780" class="guide-border"/>
+</svg>
