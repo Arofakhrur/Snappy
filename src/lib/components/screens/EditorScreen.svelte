@@ -58,6 +58,21 @@
     }
   }
 
+  const todayStr = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+
+  let enableCaption = Boolean($session.caption);
+
+  function toggleCaptionEnable() {
+    enableCaption = !enableCaption;
+    if (!enableCaption) {
+      setCaption('');
+    }
+  }
+
   function handleCaption(e) {
     setCaption(e.target.value);
   }
@@ -143,6 +158,85 @@
 
     <!-- Right: Controls -->
     <div class="controls-col">
+      <!-- 1. Compact Checklist Toolbar (Date & Caption) -->
+      <div class="compact-details-card">
+        <div class="compact-card-header">
+          <span class="compact-card-title">Teks &amp; Tanggal</span>
+          <span class="compact-card-hint">Klik checklist untuk mengaktifkan</span>
+        </div>
+
+        <div class="compact-checklist-row">
+          <!-- Date Stamp Checklist Pill -->
+          <button
+            type="button"
+            class="checklist-pill"
+            class:active={showDate}
+            on:click={toggleDate}
+            aria-pressed={showDate}
+          >
+            <span class="custom-checkbox" class:checked={showDate}>
+              {#if showDate}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              {/if}
+            </span>
+            <span class="pill-label">Date Stamp</span>
+            <span class="pill-badge">{todayStr}</span>
+          </button>
+
+          <!-- Add Caption Checklist Pill -->
+          <button
+            type="button"
+            class="checklist-pill"
+            class:active={enableCaption}
+            on:click={toggleCaptionEnable}
+            aria-pressed={enableCaption}
+          >
+            <span class="custom-checkbox" class:checked={enableCaption}>
+              {#if enableCaption}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              {/if}
+            </span>
+            <span class="pill-label">Add Caption</span>
+          </button>
+        </div>
+
+        <!-- Inline Expandable Caption Input -->
+        {#if enableCaption}
+          <div class="inline-caption-wrap">
+            <div class="caption-input-box">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="caption-icon">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              <input
+                id="caption-input"
+                type="text"
+                class="compact-input"
+                placeholder="Ketik caption strip di sini (maks 30 huruf)…"
+                value={caption}
+                on:input={handleCaption}
+                maxlength="30"
+                aria-label="Teks caption strip"
+              />
+              <span class="caption-count-badge">{caption.length}/30</span>
+              {#if caption}
+                <button
+                  type="button"
+                  class="caption-clear-btn"
+                  on:click={() => setCaption('')}
+                  title="Hapus caption"
+                  aria-label="Hapus caption"
+                >✕</button>
+              {/if}
+            </div>
+          </div>
+        {/if}
+      </div>
+
       <!-- Style Selector -->
       <div class="control-section">
         <div class="style-header-row">
@@ -202,8 +296,12 @@
 
           <div class="custom-prompt-banner">
             <span>Want custom artwork frames or asymmetric photo slots?</span>
-            <button class="btn btn-secondary btn-xs" on:click={openCreateCustomTemplate}>
-              + Create Custom Template
+            <button class="btn btn-secondary btn-xs inline-icon-btn" on:click={openCreateCustomTemplate}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Custom Template</span>
             </button>
           </div>
         {:else}
@@ -221,10 +319,13 @@
                 <div class="tmpl-button-row">
                   <button
                     id="btn-edit-custom-template"
-                    class="btn btn-secondary btn-sm"
+                    class="btn btn-secondary btn-sm inline-icon-btn"
                     on:click={openEditCurrentCustomTemplate}
                   >
-                    ✏️ Edit Slots &amp; Artwork
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                    </svg>
+                    <span>Edit Slots &amp; Artwork</span>
                   </button>
                   <button
                     id="btn-open-template-library"
@@ -312,52 +413,15 @@
         {/if}
       </div>
 
-      <!-- Caption input -->
-      <div class="control-section">
-        <h2 class="control-label">Caption</h2>
-        <input
-          id="caption-input"
-          type="text"
-          class="input"
-          placeholder="Add a caption…"
-          value={caption}
-          on:input={handleCaption}
-          maxlength="30"
-          aria-label="Strip caption text"
-        />
-        <p class="input-hint">{caption.length}/30 characters</p>
-      </div>
-
-      <!-- Date toggle -->
-      <div class="control-section">
-        <label class="toggle-row" for="date-toggle">
-          <div class="toggle-info">
-            <span class="control-label" style="margin-bottom:0">Date stamp</span>
-            <span class="toggle-sub">Show today's date on the strip</span>
-          </div>
-          <button
-            id="date-toggle"
-            role="switch"
-            aria-checked={showDate}
-            class="toggle"
-            class:on={showDate}
-            on:click={toggleDate}
-            aria-label="Toggle date stamp"
-          >
-            <div class="toggle-thumb"></div>
-          </button>
-        </label>
-      </div>
-
-      <!-- Continue CTA (mobile duplicate) -->
-      <div class="continue-cta">
+      <!-- Continue to Print Action -->
+      <div class="editor-action-bar">
         <button
           id="btn-go-print"
-          class="btn btn-primary btn-full"
+          class="btn btn-primary btn-full btn-lg action-print-btn"
           on:click={() => goTo('print')}
         >
-          Continue to Print
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+          <span>Lanjut ke Cetak (Print &amp; Share)</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
         </button>
@@ -389,12 +453,14 @@
 {/if}
 
 <style>
+
   .editor-screen {
-    min-height: 100dvh;
-    min-height: 100vh;
+    height: 100dvh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     background: var(--color-bg);
+    overflow: hidden;
   }
 
   /* Header */
@@ -402,18 +468,19 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-4) var(--space-5);
+    padding: 10px 20px;
     border-bottom: 1.5px solid var(--color-border);
     background: var(--color-surface);
     gap: var(--space-3);
     position: sticky;
     top: 0;
     z-index: 10;
+    flex-shrink: 0;
   }
 
   .editor-title {
     font-family: var(--font-display);
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
     font-weight: 700;
     color: var(--color-ink);
   }
@@ -423,19 +490,22 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
-    padding: var(--space-5);
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
     overflow-y: auto;
   }
 
   @media (min-width: 768px) {
     .editor-body {
       flex-direction: row;
-      align-items: flex-start;
-      max-width: 960px;
+      align-items: center;
+      justify-content: center;
+      max-width: 1040px;
       margin: 0 auto;
       width: 100%;
-      padding: var(--space-6);
+      padding: var(--space-3) var(--space-6);
+      gap: 32px;
+      overflow: hidden;
     }
   }
 
@@ -444,7 +514,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
     flex-shrink: 0;
   }
 
@@ -454,34 +524,28 @@
 
   .strip-shadow {
     position: absolute;
-    bottom: -12px;
+    bottom: -10px;
     left: 8px;
     right: 8px;
-    height: 24px;
+    height: 20px;
     background: rgba(28, 25, 23, 0.2);
     border-radius: var(--radius-full);
-    filter: blur(12px);
+    filter: blur(10px);
   }
 
   .strip-canvas {
-    width: 200px;
-    height: 600px;
+    width: auto;
+    height: clamp(380px, 60vh, 530px);
+    aspect-ratio: 1 / 3;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
+    box-shadow: var(--shadow-lg);
     display: block;
     position: relative;
     z-index: 1;
   }
 
-  @media (min-width: 768px) {
-    .strip-canvas {
-      width: 240px;
-      height: 720px;
-    }
-  }
-
   .strip-note {
-    font-size: var(--text-xs);
+    font-size: 11px;
     color: var(--color-muted);
     text-align: center;
   }
@@ -491,7 +555,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
+    gap: var(--space-3);
+    max-width: 440px;
     min-width: 0;
   }
 
@@ -802,83 +867,190 @@
     gap: var(--space-2);
   }
 
-  /* Input */
-  .input-hint {
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-    text-align: right;
-    margin-top: -var(--space-1);
+  .inline-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  /* Toggle */
-  .toggle-row {
+  /* Compact Details Checklist Card */
+  .compact-details-card {
+    background: var(--color-surface);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .compact-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-4);
-    cursor: pointer;
-    padding: var(--space-3) var(--space-4);
-    background: var(--color-surface);
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
+    gap: var(--space-2);
   }
 
-  .toggle-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .toggle-sub {
+  .compact-card-title {
     font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-ink);
+  }
+
+  .compact-card-hint {
+    font-size: 11px;
     color: var(--color-muted);
   }
 
-  .toggle {
-    width: 44px;
-    height: 24px;
+  .compact-checklist-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+
+  .checklist-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
     border-radius: var(--radius-full);
-    background: var(--color-border);
-    border: none;
+    padding: 6px 12px;
     cursor: pointer;
-    position: relative;
-    transition: background var(--transition-base);
+    font-family: inherit;
+    transition: all var(--transition-fast);
+    text-align: left;
+    user-select: none;
+  }
+
+  .checklist-pill:hover {
+    border-color: var(--color-ink-light);
+    background: var(--color-surface);
+  }
+
+  .checklist-pill.active {
+    background: var(--color-accent-light);
+    border-color: var(--color-accent);
+  }
+
+  .custom-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1.5px solid var(--color-muted);
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+  }
+
+  .custom-checkbox.checked {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+  }
+
+  .pill-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-ink);
+    flex: 1;
+    white-space: nowrap;
+  }
+
+  .checklist-pill.active .pill-label {
+    color: var(--color-accent);
+  }
+
+  .pill-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--color-ink-light);
+    background: rgba(28, 25, 23, 0.05);
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  /* Inline Caption Input Box */
+  .inline-caption-wrap {
+    animation: slideDown 0.2s ease-out;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .caption-input-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 6px 10px;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .caption-input-box:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-accent-light);
+  }
+
+  .caption-icon {
+    color: var(--color-muted);
     flex-shrink: 0;
   }
 
-  .toggle.on {
-    background: var(--color-accent);
+  .compact-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: var(--text-xs);
+    color: var(--color-ink);
+    padding: 0;
+    outline: none;
+    font-family: inherit;
   }
 
-  .toggle-thumb {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 18px;
-    height: 18px;
-    border-radius: var(--radius-full);
-    background: white;
-    box-shadow: var(--shadow-sm);
-    transition: left var(--transition-base);
+  .compact-input::placeholder {
+    color: var(--color-muted);
   }
 
-  .toggle.on .toggle-thumb {
-    left: 23px;
+  .caption-count-badge {
+    font-size: 10px;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    flex-shrink: 0;
   }
 
-  .toggle:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
+  .caption-clear-btn {
+    background: none;
+    border: none;
+    color: var(--color-muted);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  /* Continue CTA */
-  .continue-cta {
-    margin-top: var(--space-3);
-  }
-
-  @media (min-width: 768px) {
-    .continue-cta {
-      display: none;
-    }
+  .caption-clear-btn:hover {
+    color: var(--color-ink);
+    background: var(--color-bg);
   }
 </style>

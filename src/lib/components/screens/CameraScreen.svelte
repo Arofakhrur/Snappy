@@ -63,6 +63,16 @@
 
   async function startCaptureSession() {
     if (isSessionActive) return;
+
+    // When starting a full session (not single retake), completely wipe previous photos
+    if (retakeIndex === null) {
+      session.update((s) => ({
+        ...s,
+        photos: [],
+        captureProgress: 0,
+      }));
+    }
+
     isSessionActive = true;
     currentPhotoNum = retakeIndex !== null ? retakeIndex + 1 : 1;
     const totalShots = retakeIndex !== null ? 1 : photoCount;

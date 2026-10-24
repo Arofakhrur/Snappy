@@ -5,8 +5,19 @@
 	import ReviewScreen from '#lib/components/screens/ReviewScreen.svelte';
 	import EditorScreen from '#lib/components/screens/EditorScreen.svelte';
 	import PrintScreen from '#lib/components/screens/PrintScreen.svelte';
+	import GalleryScreen from '#lib/components/screens/GalleryScreen.svelte';
+	import { onMount } from 'svelte';
 
 	$: screen = $session.screen;
+
+	// Check for gallery QR-code scan: ?gallery=SESSION_ID
+	let gallerySessionId = null;
+
+	onMount(() => {
+		const params = new URLSearchParams(window.location.search);
+		const id = params.get('gallery') || params.get('id');
+		if (id) gallerySessionId = id;
+	});
 </script>
 
 <svelte:head>
@@ -14,17 +25,22 @@
 </svelte:head>
 
 <main class="app-shell" aria-label="DISTUDIO Photobooth application">
-	{#key screen}
-		{#if screen === 'start'}
-			<StartScreen />
-		{:else if screen === 'camera'}
-			<CameraScreen />
-		{:else if screen === 'review'}
-			<ReviewScreen />
-		{:else if screen === 'editor'}
-			<EditorScreen />
-		{:else if screen === 'print'}
-			<PrintScreen />
-		{/if}
-	{/key}
+	{#if gallerySessionId}
+		<!-- QR-code gallery view for mobile users -->
+		<GalleryScreen sessionId={gallerySessionId} />
+	{:else}
+		{#key screen}
+			{#if screen === 'start'}
+				<StartScreen />
+			{:else if screen === 'camera'}
+				<CameraScreen />
+			{:else if screen === 'review'}
+				<ReviewScreen />
+			{:else if screen === 'editor'}
+				<EditorScreen />
+			{:else if screen === 'print'}
+				<PrintScreen />
+			{/if}
+		{/key}
+	{/if}
 </main>

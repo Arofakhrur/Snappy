@@ -1,5 +1,5 @@
 <script>
-  import { session, goTo, setRetakeIndex, resetSession } from '#lib/stores/session.js';
+  import { session, goTo, setRetakeIndex, beginCapture } from '#lib/stores/session.js';
   import { stopCamera } from '#lib/utils/camera.js';
 
   $: photos = $session.photos;
@@ -11,7 +11,22 @@
   }
 
   function handleRetakeAll() {
-    session.update(sess => ({ ...sess, screen: 'camera', photos: [], retakeIndex: null, isCapturing: true, captureProgress: 0 }));
+    // Stop camera, wipe photos completely, and begin capture fresh
+    stopCamera();
+    session.update((s) => ({
+      ...s,
+      photos: [],
+      retakeIndex: null,
+      isCapturing: true,
+      captureProgress: 0,
+      cameraError: null,
+      screen: 'camera',
+    }));
+  }
+
+  function handleBack() {
+    // Back from review means discarding the captured batch to retake
+    handleRetakeAll();
   }
 
   function handleContinue() {
@@ -23,8 +38,8 @@
   <header class="review-header">
     <button
       class="btn btn-ghost btn-sm"
-      on:click={() => goTo('camera')}
-      aria-label="Go back to camera"
+      on:click={handleBack}
+      aria-label="Go back to camera and retake"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
         <polyline points="15 18 9 12 15 6"/>

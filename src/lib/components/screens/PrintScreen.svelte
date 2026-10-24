@@ -3,6 +3,7 @@
   import { session, goTo, resetSession } from '#lib/stores/session.js';
   import { renderExportCanvas } from '#lib/utils/canvas.js';
   import { downloadStripPNG, printStrip } from '#lib/utils/export.js';
+  import { saveGallerySession, buildQRCodeDataUrl, resolveGalleryUrl, generateId } from '#lib/utils/gallery.js';
   import PrinterIllus from '#lib/components/illustrations/PrinterIllus.svelte';
 
   /** @type {HTMLCanvasElement} */
@@ -11,6 +12,14 @@
   let isDownloading = false;
   let downloadSuccess = false;
   let printError = null;
+
+  // QR Gallery state
+  let qrImageUrl = null;
+  let galleryUrl = null;
+  let galleryReady = false;
+  let galleryError = null;
+  let copiedUrl = false;
+  let showPrinterInfo = false;
 
   $: photos = $session.photos;
   $: templateKey = $session.selectedTemplate;
@@ -21,6 +30,8 @@
   $: activeTemplate = customTemplateData || templateKey;
 
   onMount(async () => {
+    // Generate QR instantly without waiting for sheet canvas render
+    generateGalleryQR();
     await drawSheetPreview();
   });
 
@@ -36,6 +47,44 @@
       ctx.drawImage(fullCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
     } catch (e) {
       console.error('Failed to render sheet preview:', e);
+    }
+  }
+
+  async function generateGalleryQR() {
+    try {
+      // 1. Generate unique session ID immediately
+      const sessionId = generateId();
+
+      // 2. Resolve URL and generate QR code INSTANTLY
+      galleryUrl = await resolveGalleryUrl(sessionId);
+      qrImageUrl = await buildQRCodeDataUrl(galleryUrl, 360);
+      galleryReady = true;
+
+      // 3. Concurrently save session data to server & IndexedDB in the background
+      (async () => {
+        try {
+          let stripDataUrl = '';
+          try {
+            const exportCanvas = await renderExportCanvas(photos, activeTemplate, { caption, showDate });
+            stripDataUrl = exportCanvas.toDataURL('image/png');
+          } catch (ce) {
+            console.warn('Canvas export warning:', ce);
+          }
+
+          await saveGallerySession({
+            id: sessionId,
+            photos: (photos || []).filter(Boolean),
+            stripDataUrl,
+            templateKey: typeof activeTemplate === 'string' ? activeTemplate : 'custom',
+            gifDataUrl: null,
+          });
+        } catch (saveErr) {
+          console.warn('Background session save warning:', saveErr);
+        }
+      })();
+    } catch (e) {
+      console.error('Gallery QR generation failed:', e);
+      galleryError = 'Gagal membuat QR code. Anda tetap bisa mengunduh PNG.';
     }
   }
 
@@ -60,9 +109,7 @@
     try {
       await downloadStripPNG(photos, activeTemplate, { caption, showDate });
       downloadSuccess = true;
-      setTimeout(() => {
-        downloadSuccess = false;
-      }, 4000);
+      setTimeout(() => { downloadSuccess = false; }, 4000);
     } catch (err) {
       console.error('Download error:', err);
       printError = 'Failed to generate download. Please try again.';
@@ -73,6 +120,14 @@
 
   function handleNewSession() {
     resetSession();
+  }
+
+  function copyGalleryUrl() {
+    if (!galleryUrl) return;
+    navigator.clipboard.writeText(galleryUrl).then(() => {
+      copiedUrl = true;
+      setTimeout(() => { copiedUrl = false; }, 2500);
+    }).catch(() => {});
   }
 </script>
 
@@ -88,14 +143,18 @@
       </svg>
       Editor
     </button>
-    <h1 class="print-header-title">Print & Export</h1>
+    <h1 class="print-header-title">Print &amp; Export</h1>
     <button
       id="btn-header-new-session"
-      class="btn btn-ghost btn-sm"
+      class="btn btn-ghost btn-sm header-new-btn"
       on:click={handleNewSession}
       aria-label="Start a new session"
     >
-      New Session
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="1 4 1 10 7 10"/>
+        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+      </svg>
+      <span>New Session</span>
     </button>
   </header>
 
@@ -110,25 +169,18 @@
             width="400"
             height="600"
             class="sheet-canvas"
-            aria-label="4R printable sheet preview showing two side-by-side photo strips"
+            aria-label="4R printable sheet preview"
           ></canvas>
         </div>
-        <p class="sheet-caption">Two identical strips with cutting guide line</p>
+        <p class="sheet-caption">2 strip dengan garis potong tengah</p>
       </div>
     </div>
 
-    <!-- Right Column: Actions and Print Guide -->
+    <!-- Right Column: QR -> Actions (Print & Download) -> Info modal -->
     <div class="print-details-col">
-      <div class="print-hero-message">
-        <h2 class="print-title">Your Strip is Ready!</h2>
-        <p class="print-subtitle">
-          Print directly to 4R photo paper or save a high-resolution 300 DPI PNG.
-        </p>
-      </div>
-
       {#if printError}
         <div class="alert alert-error" role="alert">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10"/>
             <line x1="12" y1="8" x2="12" y2="12"/>
             <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -139,48 +191,119 @@
 
       {#if downloadSuccess}
         <div class="alert alert-success" role="status">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"/>
           </svg>
-          <span>Photo strip downloaded successfully!</span>
+          <span>Photo strip berhasil diunduh!</span>
         </div>
       {/if}
 
-      <!-- Main Action Buttons -->
-      <div class="action-buttons-group">
-        <button
-          id="btn-print"
-          class="btn btn-primary btn-lg"
-          on:click={handlePrint}
-          disabled={isPrinting}
-          aria-label="Print photo strip on 4R paper"
-        >
-          {#if isPrinting}
+      <!-- 1. QR Section: Title above QR, clean white box directly on surface (NO purple card) -->
+      <div class="qr-clean-container">
+        <div class="qr-title-row">
+          <h2 class="qr-clean-title">Scan untuk download gambar</h2>
+          <span class="qr-clean-hint">Arahkan kamera HP ke QR</span>
+        </div>
+
+        {#if galleryReady && qrImageUrl}
+          <div class="qr-box">
+            <img src={qrImageUrl} alt="QR Code untuk mengunduh foto" class="qr-code-img" />
+          </div>
+
+          <div class="qr-url-pill">
+            <span class="qr-url-short" title={galleryUrl}>{galleryUrl}</span>
+            <button
+              class="url-action-btn"
+              on:click={copyGalleryUrl}
+              aria-label="Copy link"
+              title="Salin link"
+            >
+              {#if copiedUrl}
+                <span class="copied-tag">✓ Tersalin</span>
+              {:else}
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+              {/if}
+            </button>
+            <a
+              href={galleryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="url-action-btn"
+              title="Buka galeri di tab baru"
+              aria-label="Open gallery in new tab"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </a>
+          </div>
+        {:else if galleryError}
+          <p class="qr-err-text">{galleryError}</p>
+        {:else}
+          <div class="qr-loading-box">
             <div class="btn-spinner" aria-hidden="true"></div>
-            <span>Preparing Print…</span>
-          {:else}
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="6 9 6 2 18 2 18 9"/>
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-              <rect x="6" y="14" width="12" height="8"/>
+            <span>Membuat QR code…</span>
+          </div>
+        {/if}
+      </div>
+
+      <!-- 2. Action Buttons Below QR: Cetak + Info icon (i) + Download PNG -->
+      <div class="print-actions-wrapper">
+        <div class="print-btn-with-info">
+          <button
+            id="btn-print"
+            class="btn btn-primary btn-print-main"
+            on:click={handlePrint}
+            disabled={isPrinting}
+            aria-label="Print photo strip"
+          >
+            {#if isPrinting}
+              <div class="btn-spinner" aria-hidden="true"></div>
+              <span>Menyiapkan Cetak…</span>
+            {:else}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+              <span>Cetak 4R Photo Strip</span>
+            {/if}
+          </button>
+
+          <!-- Printer Setup Info Icon (i) -->
+          <button
+            type="button"
+            class="printer-info-icon-btn"
+            on:click={() => { showPrinterInfo = !showPrinterInfo; }}
+            title="Printer Setup Checklist"
+            aria-label="Printer setup information"
+            aria-expanded={showPrinterInfo}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
-            <span>Print 4R Photo Strip</span>
-          {/if}
-        </button>
+          </button>
+        </div>
 
         <button
           id="btn-download-png"
-          class="btn btn-secondary btn-lg"
+          class="btn btn-secondary btn-download-main"
           on:click={handleDownload}
           disabled={isDownloading}
           aria-label="Download high-resolution PNG"
         >
           {#if isDownloading}
             <div class="btn-spinner" aria-hidden="true"></div>
-            <span>Generating PNG…</span>
+            <span>Membuat PNG…</span>
           {:else}
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
@@ -190,45 +313,60 @@
         </button>
       </div>
 
-      <!-- Print Settings Guidance -->
-      <div class="guidance-card">
-        <div class="guidance-header">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="16" x2="12" y2="12"/>
-            <line x1="12" y1="8" x2="12.01" y2="8"/>
-          </svg>
-          <h3 class="guidance-title">Printer Setup Checklist</h3>
-        </div>
-        <ul class="guidance-list">
-          <li><strong>Paper Size:</strong> 4 × 6 inches (4R / Photo Paper)</li>
-          <li><strong>Orientation:</strong> Portrait</li>
-          <li><strong>Scale:</strong> 100% (Do not "Fit to Page")</li>
-          <li><strong>Margins:</strong> None / Borderless</li>
-          <li><strong>Background Graphics:</strong> Checked / ON</li>
-        </ul>
-        <div class="cutting-hint">
-          ✂️ <strong>After printing:</strong> Cut along the center dashed line to separate into two 2 × 6" keepsake strips.
-        </div>
-      </div>
-
-      <!-- New Session Reset Button -->
-      <div class="new-session-container">
+      <!-- Compact New Session Button -->
+      <div class="bottom-reset-wrap">
         <button
           id="btn-new-session"
-          class="btn btn-ghost btn-full"
+          class="btn btn-ghost btn-sm inline-icon-btn"
           on:click={handleNewSession}
           aria-label="Start over with a fresh session"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="1 4 1 10 7 10"/>
             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
           </svg>
-          Start New Photobooth Session
+          <span>Sesi Baru (Retake / Mulai Ulang)</span>
         </button>
       </div>
     </div>
   </div>
+
+  <!-- Printer Setup Modal / Popover -->
+  {#if showPrinterInfo}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="printer-modal-backdrop" on:click={() => { showPrinterInfo = false; }} role="dialog" aria-modal="true" tabindex="-1">
+      <div class="printer-modal-card" on:click|stopPropagation>
+        <div class="printer-modal-header">
+          <div class="printer-modal-title-group">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <h3>Printer Setup Checklist</h3>
+          </div>
+          <button
+            class="modal-close-btn"
+            on:click={() => { showPrinterInfo = false; }}
+            aria-label="Close printer setup"
+          >✕</button>
+        </div>
+
+        <ul class="printer-checklist">
+          <li><strong>Ukuran Kertas:</strong> 4 × 6 inches (4R / Photo Paper)</li>
+          <li><strong>Orientasi:</strong> Portrait (Tegak)</li>
+          <li><strong>Skala (Scale):</strong> 100% (Jangan pilih "Fit to Page")</li>
+          <li><strong>Margin:</strong> None / Borderless</li>
+          <li><strong>Background Graphics:</strong> Centang / ON</li>
+        </ul>
+
+        <div class="cutting-hint-modal">
+          ✂️ <strong>Setelah cetak:</strong> Potong sepanjang garis putus-putus tengah untuk membagi menjadi 2 strip kenang-kenangan ukuran 2 × 6″.
+        </div>
+      </div>
+    </div>
+  {/if}
 </section>
 
 <style>
@@ -238,44 +376,55 @@
     display: flex;
     flex-direction: column;
     background: var(--color-bg);
+    overflow: hidden;
   }
 
   .print-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-4) var(--space-5);
+    padding: 10px 20px;
     border-bottom: 1.5px solid var(--color-border);
     background: var(--color-surface);
     position: sticky;
     top: 0;
     z-index: 10;
+    flex-shrink: 0;
   }
 
   .print-header-title {
     font-family: var(--font-display);
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
     font-weight: 700;
     color: var(--color-ink);
+  }
+
+  .header-new-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
   .print-body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
-    padding: var(--space-5);
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
     max-width: 960px;
     margin: 0 auto;
     width: 100%;
+    align-items: center;
+    justify-content: center;
   }
 
   @media (min-width: 768px) {
     .print-body {
       flex-direction: row;
-      align-items: flex-start;
-      padding: var(--space-8);
-      gap: var(--space-8);
+      align-items: center;
+      justify-content: center;
+      gap: 36px;
+      padding: var(--space-4) var(--space-6);
     }
   }
 
@@ -285,37 +434,35 @@
     flex-direction: column;
     align-items: center;
     flex: 0 0 auto;
-    width: 100%;
-  }
-
-  @media (min-width: 768px) {
-    .sheet-preview-col {
-      width: 340px;
-    }
   }
 
   .sheet-card {
     background: var(--color-surface);
     border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-xl);
-    padding: var(--space-4);
-    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-3);
-    width: 100%;
-    max-width: 320px;
+    gap: var(--space-2);
+    width: 260px;
+  }
+
+  @media (min-width: 768px) {
+    .sheet-card {
+      width: 280px;
+    }
   }
 
   .sheet-badge {
-    font-size: var(--text-xs);
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-ink-light);
     background: var(--color-bg);
-    padding: 4px 12px;
+    padding: 2px 10px;
     border-radius: var(--radius-full);
     border: 1px solid var(--color-border);
   }
@@ -323,6 +470,7 @@
   .canvas-wrapper {
     width: 100%;
     aspect-ratio: 2 / 3;
+    max-height: min(420px, 58vh);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -340,7 +488,7 @@
   }
 
   .sheet-caption {
-    font-size: var(--text-xs);
+    font-size: 11px;
     color: var(--color-muted);
     text-align: center;
     margin: 0;
@@ -348,43 +496,32 @@
 
   /* Print Details Column */
   .print-details-col {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
+    align-items: center;
+    gap: 10px;
+    width: 260px;
+    max-width: 100%;
     min-width: 0;
   }
 
-  .print-hero-message {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  .print-title {
-    font-family: var(--font-display);
-    font-size: var(--text-3xl);
-    font-weight: 700;
-    color: var(--color-ink);
-    line-height: 1.2;
-    margin: 0;
-  }
-
-  .print-subtitle {
-    color: var(--color-ink-light);
-    font-size: var(--text-base);
-    margin: 0;
+  @media (min-width: 768px) {
+    .print-details-col {
+      width: 280px;
+    }
   }
 
   /* Alerts */
   .alert {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
+    gap: var(--space-2);
+    padding: 6px 12px;
     border-radius: var(--radius-md);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     font-weight: 500;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .alert-error {
@@ -399,97 +536,321 @@
     border: 1px solid #a7f3d0;
   }
 
-  /* Action Buttons */
-  .action-buttons-group {
+  /* ── 1. Clean QR Container (NO outer card wrapper, only QR box has outline) ── */
+  .qr-clean-container {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    align-items: center;
+    gap: 8px;
   }
 
-  .action-buttons-group .btn-lg {
-    padding: var(--space-4) var(--space-5);
-    font-size: var(--text-base);
+  .qr-title-row {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+  }
+
+  .qr-clean-title {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-ink);
+    margin: 0;
+  }
+
+  .qr-clean-hint {
+    font-size: 11px;
+    color: var(--color-ink-light);
+  }
+
+  /* QR Box: 1:1 Aspect Ratio, expanding across full width, maintaining outline */
+  .qr-box {
+    width: 100%;
+    aspect-ratio: 1 / 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-3);
+    background: #FFFFFF;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    box-sizing: border-box;
+    box-shadow: 0 1px 4px rgba(28, 25, 23, 0.06);
+  }
+
+  .qr-code-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+
+  .qr-url-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: 4px 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .qr-url-short {
+    flex: 1;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--color-ink-light);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .url-action-btn {
+    padding: 2px 4px;
+    color: var(--color-ink);
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast);
+  }
+
+  .url-action-btn:hover {
+    color: var(--color-accent);
+  }
+
+  .copied-tag {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-success);
+  }
+
+  .qr-loading-box {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #FFFFFF;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-sizing: border-box;
+    color: var(--color-ink-light);
+    font-size: var(--text-xs);
+  }
+
+  .qr-err-text {
+    font-size: var(--text-xs);
+    color: var(--color-coral);
+    margin: 0;
+    text-align: center;
+  }
+
+  /* ── 2. Action Buttons Below QR: Matches QR width ── */
+  .print-actions-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .print-btn-with-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .btn-print-main {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: var(--radius-md);
+  }
+
+  .printer-info-icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--color-surface);
+    border: 1.5px solid var(--color-border);
+    color: var(--color-ink-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .printer-info-icon-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    transform: scale(1.05);
+  }
+
+  .btn-download-main {
+    width: 100%;
+    padding: 9px 16px;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: var(--radius-md);
   }
 
   .btn-spinner {
-    width: 18px;
-    height: 18px;
-    border: 2.5px solid rgba(255, 255, 255, 0.3);
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
     border-top-color: white;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
 
   .btn-secondary .btn-spinner {
-    border: 2.5px solid rgba(28, 25, 23, 0.2);
+    border: 2px solid rgba(28, 25, 23, 0.2);
     border-top-color: var(--color-ink);
   }
 
-  /* Guidance Card */
-  .guidance-card {
-    background: var(--color-surface);
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── Bottom Reset ── */
+  .bottom-reset-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding-top: 2px;
+  }
+
+  .inline-icon-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--color-ink-light);
+  }
+
+  .inline-icon-btn:hover {
+    color: var(--color-ink);
+  }
+
+  /* ── Printer Setup Modal / Popover ── */
+  .printer-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(28, 25, 23, 0.45);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .printer-modal-card {
+    background: white;
     border: 1.5px solid var(--color-border);
     border-radius: var(--radius-lg);
-    padding: var(--space-5);
+    padding: 20px 22px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: var(--shadow-xl);
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    animation: popIn 0.2s ease-out;
   }
 
-  .guidance-header {
+  @keyframes popIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .printer-modal-header {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 10px;
   }
 
-  .guidance-title {
+  .printer-modal-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .printer-modal-title-group h3 {
+    margin: 0;
     font-size: var(--text-sm);
     font-weight: 700;
     color: var(--color-ink);
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
-  .guidance-list {
+  .modal-close-btn {
+    background: none;
+    border: none;
+    color: var(--color-muted);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+  }
+
+  .modal-close-btn:hover {
+    color: var(--color-ink);
+    background: var(--color-bg);
+  }
+
+  .printer-checklist {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
+    gap: 8px;
+    font-size: var(--text-xs);
     color: var(--color-ink-light);
   }
 
-  .guidance-list li {
-    display: flex;
-    gap: var(--space-2);
-    align-items: baseline;
-  }
-
-  .guidance-list strong {
+  .printer-checklist li strong {
     color: var(--color-ink);
   }
 
-  .cutting-hint {
-    margin-top: var(--space-2);
-    padding: var(--space-3);
+  .cutting-hint-modal {
+    padding: 8px 12px;
     background: #fffbeb;
     border: 1px dashed #fcd34d;
     border-radius: var(--radius-md);
-    font-size: var(--text-xs);
+    font-size: 11px;
     color: #78350f;
-    line-height: 1.5;
-  }
-
-  .new-session-container {
-    margin-top: var(--space-2);
-    border-top: 1px solid var(--color-border);
-    padding-top: var(--space-4);
+    line-height: 1.4;
   }
 </style>
