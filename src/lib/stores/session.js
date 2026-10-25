@@ -2,11 +2,12 @@
  * Session Store — Central application state
  * All photo session data lives here.
  * Data is cleared on reset or page reload (no persistence).
+ * Kios theme is persisted separately (localStorage) so a kiosk restart remembers it.
  */
 
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 
-/** @typedef {'start'|'camera'|'review'|'editor'|'print'} Screen */
+/** @typedef {'start'|'strip'|'camera'|'review'|'editor'|'print'} Screen */
 
 /** @type {import('svelte/store').Writable<{
  *   screen: Screen,
@@ -19,7 +20,21 @@ import { writable, derived } from 'svelte/store';
  *   isCapturing: boolean,
  *   captureProgress: number,
  *   photoCount: number,
+ *   theme: 'dark' | 'light',
  * }>} */
+
+/** Theme persistence key: the kios choice survives page reloads via localStorage */
+const THEME_KEY = 'distudio-theme';
+
+function initialTheme() {
+  if (typeof window === 'undefined') return 'dark';
+  try {
+    return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
 export const session = writable({
   screen: 'start',
   photos: [],
@@ -32,6 +47,7 @@ export const session = writable({
   captureProgress: 0,
   photoCount: 4,
   customTemplateData: null,
+  theme: initialTheme(),
 });
 
 /** Derived: is a photo set complete? */
@@ -41,6 +57,18 @@ export const isPhotoSetComplete = derived(
 );
 
 // ─── Action Functions ───────────────────────────────────────────────────────
+
+/** Set the kios theme ('dark' | 'light'); persisted for the next kiosk boot */
+export function setTheme(/** @type {'dark' | 'light'} */ theme) {
+  session.update((s) => ({ ...s, theme }));
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      /* storage unavailable — theme lasts for this session only */
+    }
+  }
+}
 
 /** Navigate to a specific screen */
 export function goTo(/** @type {Screen} */ screen) {
@@ -112,9 +140,10 @@ export function toggleDate() {
   session.update((s) => ({ ...s, showDate: !s.showDate }));
 }
 
-/** Set photo count (3 or 4) */
+/** Set photo count (1–6) — ranges outside are guarded */
 export function setPhotoCount(/** @type {number} */ count) {
-  session.update((s) => ({ ...s, photoCount: count }));
+  const safe = Math.min(6, Math.max(1, Math.round(count)));
+  session.update((s) => ({ ...s, photoCount: safe }));
 }
 
 /** Set active custom template object */
@@ -171,8 +200,9 @@ export function updateSlotTransform(slotId, { scale, offsetX, offsetY }) {
   });
 }
 
-/** Full session reset — clears all photos and returns to start */
+/** Full session reset — clears all photos and returns to start (keeps kios theme) */
 export function resetSession() {
+  const currentTheme = get(session).theme;
   session.set({
     screen: 'start',
     photos: [],
@@ -185,5 +215,6 @@ export function resetSession() {
     captureProgress: 0,
     photoCount: 4,
     customTemplateData: null,
+    theme: currentTheme || 'dark',
   });
 }

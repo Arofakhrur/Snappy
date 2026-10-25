@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 828" width="13in" height="7in">
+  <defs>
+    <style>
+      .safe-line { stroke: #10B981; stroke-width: 2; stroke-dasharray: 4 4; fill: none; }
+      .label-sub { font-family: 'Inter', -apple-system, sans-serif; font-size: 20px; font-weight: 600; fill: #64748B; }
+      .inst-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 15px; fill: #64748B; }
+    </style>
+    <pattern id="checker" width="91" height="91" patternUnits="userSpaceOnUse">
+      <rect width="91" height="91" fill="#EDE7DB"/>
+      <rect width="45.5" height="45.5" fill="#E1D9C8"/>
+      <rect x="45.5" y="45.5" width="45.5" height="45.5" fill="#E1D9C8"/>
+    </pattern>
+  </defs>
+
+  <g id="artwork-layer">
+    <rect x="0" y="0" width="1536" height="828" fill="#FBF7F0"/>
+    <rect x="14" y="14" width="1508" height="800" fill="none" stroke="#C7A45C" stroke-width="2.2"/>
+
+    <rect x="40" y="40" width="1456" height="616" fill="url(#checker)" stroke="#2B2620" stroke-opacity="0.1" stroke-width="1.5"/>
+
+    <text x="768" y="741" font-family="'Playfair Display', 'Georgia', serif" font-size="45" fill="#2B2620" text-anchor="middle" dominant-baseline="central">Big shot</text>
+    <text x="768" y="786" font-family="'Inter', -apple-system, sans-serif" font-size="15" font-weight="600" fill="#B98A3F" text-anchor="middle" dominant-baseline="central" letter-spacing="5">PHOTO BOOTH</text>
+  </g>
+
+  <g id="guides-layer" opacity="0.85">
+    <rect x="42" y="42" width="1452" height="744" class="safe-line"/>
+    <text x="52" y="72" class="inst-text" fill="#10B981">SAFE PRINT MARGIN (3,5mm / 42px)</text>
+    <text x="768" y="110" class="label-sub" text-anchor="middle">Big shot — 1 slot menyamping (1536 × 828 px @ 300 DPI = 13 × 7 cm)</text>
+    <text x="768" y="812" class="inst-text" text-anchor="middle">Serif title + PHOTO BOOTH — matches renderStrip photoCount 1</text>
+  </g>
+</svg>

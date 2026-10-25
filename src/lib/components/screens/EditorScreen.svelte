@@ -10,7 +10,7 @@
     updateSlotAssignment,
     updateSlotTransform
   } from '#lib/stores/session.js';
-  import { TEMPLATES, renderStripPreview } from '#lib/utils/canvas.js';
+  import { TEMPLATES, PRODUK, renderStripPreview } from '#lib/utils/canvas.js';
   import CustomTemplateBuilder from '#lib/components/custom/CustomTemplateBuilder.svelte';
   import TemplateLibraryModal from '#lib/components/custom/TemplateLibraryModal.svelte';
   import { getAllCustomTemplates } from '#lib/utils/customTemplateStorage.js';
@@ -25,6 +25,11 @@
   $: showDate = $session.showDate;
 
   $: activeTemplate = customTemplateData || templateKey;
+
+  // Produk aktif = ukuran cetak nyata per jumlah foto; kanvas pratinjau
+  // memakai rasio & resolusi produk (setengah px cetak) supaya
+  // pratinjau = miniatur persis hasil cetak.
+  $: produk = PRODUK[$session.photoCount] || PRODUK[4];
 
   // Custom template modal states
   let showBuilderModal = false;
@@ -42,6 +47,12 @@
 
   async function renderPreview() {
     if (!canvas) return;
+    const p = PRODUK[$session.photoCount] || PRODUK[4];
+    canvas.width = Math.round(p.pxW / 2);
+    canvas.height = Math.round(p.pxH / 2);
+    canvas.style.aspectRatio = `${p.pxW} / ${p.pxH}`;
+    // Produk menyamping (Big shot): kertas lebar, kurangi tinggi tampil
+    canvas.style.height = p.sheetOrient === 'landscape' ? 'clamp(230px, 30vh, 320px)' : '';
     await renderStripPreview(canvas, photos, activeTemplate, { caption, showDate });
   }
 
@@ -153,7 +164,7 @@
           aria-label="Photo strip preview"
         ></canvas>
       </div>
-      <p class="strip-note">Preview • actual output will be 1200 × 1800px (4R sheet)</p>
+      <p class="strip-note">Preview • output: {produk.nama} {produk.cm} cm di lembar 4R</p>
     </div>
 
     <!-- Right: Controls -->
@@ -281,13 +292,15 @@
                 aria-pressed={templateKey === tmpl.id && !customTemplateData}
                 aria-label="{tmpl.label} style"
               >
-                <!-- Mini strip preview swatch -->
-                <div class="template-swatch" style="background: {tmpl.bg}; border-color: {tmpl.frameBg};">
-                  <div class="swatch-header" style="background: {tmpl.headerBg};"></div>
-                  <div class="swatch-photo" style="background: {tmpl.frameBg}22;"></div>
-                  <div class="swatch-photo" style="background: {tmpl.frameBg}22;"></div>
-                  <div class="swatch-photo" style="background: {tmpl.frameBg}22;"></div>
-                  <div class="swatch-footer" style="background: {tmpl.footerBg};"></div>
+                <!-- Mini strip preview swatch: kertas + slot papan catur + garis rambut -->
+                <div class="template-swatch" style="background: {tmpl.bg}; border-color: {tmpl.hairline};">
+                  <div class="swatch-photo" style="background: repeating-linear-gradient(45deg, {tmpl.checkerA} 0 4px, {tmpl.checkerB} 4px 8px);"></div>
+                  <div class="swatch-photo" style="background: repeating-linear-gradient(45deg, {tmpl.checkerA} 0 4px, {tmpl.checkerB} 4px 8px);"></div>
+                  <div class="swatch-photo" style="background: repeating-linear-gradient(45deg, {tmpl.checkerA} 0 4px, {tmpl.checkerB} 4px 8px);"></div>
+                  <div class="swatch-footer">
+                    <span style="color: {tmpl.ink};">Aa</span>
+                    <span style="background: {tmpl.accent};"></span>
+                  </div>
                 </div>
                 <span class="template-label">{tmpl.label}</span>
               </button>
@@ -536,6 +549,7 @@
   .strip-canvas {
     width: auto;
     height: clamp(380px, 60vh, 530px);
+    /* fallback sebelum JS menyetel rasio per produk */
     aspect-ratio: 1 / 3;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
@@ -645,20 +659,31 @@
     box-shadow: 0 0 0 3px var(--color-highlight), var(--shadow-md);
   }
 
-  .swatch-header {
-    height: 12%;
+  .swatch-footer {
+    height: 16%;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
   }
 
-  .swatch-footer {
-    height: 12%;
-    flex-shrink: 0;
+  .swatch-footer span:first-child {
+    font-family: var(--font-display), 'Georgia', serif;
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .swatch-footer span:last-child {
+    width: 7px;
+    height: 2px;
+    border-radius: 2px;
   }
 
   .swatch-photo {
     flex: 1;
     margin: 2px 4px;
-    border-radius: 2px;
+    border-radius: 0;
   }
 
   .template-label {

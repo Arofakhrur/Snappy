@@ -3,6 +3,7 @@
   import { loadGallerySession, buildAnimatedGif } from '#lib/utils/gallery.js';
   import { playGrekSound } from '#lib/utils/audio.js';
   import { goTo } from '#lib/stores/session.js';
+  import { PRODUK } from '#lib/utils/canvas.js';
 
   export let sessionId = '';
 
@@ -33,13 +34,16 @@
   let pointerDeltaX = 0;
   let isDragging = false;
 
+  /** Produk strip sesuai jumlah foto galeri (ukuran cetak nyata). */
+  $: produk = galleryData ? (PRODUK[galleryData.photos.length] || PRODUK[4]) : PRODUK[4];
+
   $: cardItems = galleryData ? [
     {
       id: 'strip',
       type: 'strip',
       badge: 'HASIL STRIP 4R',
-      title: 'Photo Strip (Grid 4R)',
-      subtitle: 'Dua strip 2×6" bersebelahan siap cetak',
+      title: `Photo Strip (${produk.nama})`,
+      subtitle: `${produk.nama} ${produk.cm} cm — ${produk.copySheet === 2 ? '2 salinan berdampingan' : '1 salinan'} siap cetak`,
       imageUrl: galleryData.stripDataUrl,
       downloadAction: downloadStrip,
       btnLabel: 'Unduh Strip 4R',

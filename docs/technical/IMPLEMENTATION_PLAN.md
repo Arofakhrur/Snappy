@@ -170,7 +170,7 @@
 
 **Goal:** Operators can design, import, visually map, and print custom photo strips.
 
-- [x] Downloadable design guides created (`strip-template-2x6.svg` & `sheet-template-4r.svg`).
+- [x] Downloadable design guides created (per-product `strip-template-{bigshot,twoup,threeup,twobytwo,fiveup,sixup}.svg` & `sheet-template-4r.svg`).
 - [x] Artwork import with PNG / SVG validation, resolution warning, and transparent overlay support.
 - [x] Interactive visual slot mapping editor (`CustomTemplateBuilder.svelte`) with rectangular, polygon, and circular geometry.
 - [x] Pointer drag-to-move, corner-resize, and polygon-vertex manipulation.

@@ -57,7 +57,15 @@
     </p>
 
     <!-- Photo grid -->
-    <div class="photo-grid" class:grid-3={photoCount === 3} class:grid-4={photoCount === 4}>
+    <div
+      class="photo-grid"
+      class:grid-1={photoCount === 1}
+      class:grid-2={photoCount === 2}
+      class:grid-3={photoCount === 3}
+      class:grid-4={photoCount === 4}
+        class:grid-5={photoCount === 5}
+      class:grid-6={photoCount === 6}
+    >
       {#each photos as photo, i}
         <div class="photo-card" style="animation-delay: {i * 60}ms">
           <div class="photo-slot">
@@ -162,7 +170,7 @@
     text-align: center;
   }
 
-  /* Photo grid */
+  /* Photo grid — jumlah kolom mengikuti photoCount 1–5 */
   .photo-grid {
     display: grid;
     gap: var(--space-4);
@@ -170,11 +178,30 @@
     margin: 0 auto;
   }
 
+  .grid-1 {
+    grid-template-columns: 1fr;
+    max-width: 280px;
+  }
+
+  .grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
 
   .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* 5 foto: ponsel membagi 3+2, layar lebar membagi 5 rata */
+  .grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* 6 foto: ponsel 3 kolom dua baris, layar lebar 6 rata saat sempit */
+  .grid-6 {
     grid-template-columns: repeat(3, 1fr);
   }
 
@@ -240,6 +267,15 @@
     }
     .grid-3 {
       grid-template-columns: repeat(3, 1fr);
+    }
+    .grid-5 {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .grid-6 {
+      grid-template-columns: repeat(6, 1fr);
+    }
+    .grid-1 {
+      max-width: 320px;
     }
   }
 

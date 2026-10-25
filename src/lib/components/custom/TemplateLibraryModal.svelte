@@ -20,6 +20,16 @@
   let importError = '';
   let activeTemplateId = $session.selectedTemplate;
 
+  /** Nama berkas panduan SVG per jumlah foto (ukuran nyata PRODUK). */
+  const NAMA_BERKAS = {
+    1: 'bigshot',
+    2: 'twoup',
+    3: 'threeup',
+    4: 'twobytwo',
+    5: 'fiveup',
+    6: 'sixup',
+  };
+
   onMount(async () => {
     await loadTemplates();
   });
@@ -107,14 +117,17 @@
           class="hidden-file-input"
         />
 
-        <a
-          href="/templates/strip-template-2x6.svg"
-          download="distudio-strip-template-2x6.svg"
-          class="btn btn-ghost btn-sm"
-          title="Download 2×6″ blank guide SVG"
-        >
-          📥 2×6″ Guide SVG
-        </a>
+        <div class="guide-variants" aria-label="Panduan layout per jumlah foto">
+          <span class="guide-variants-label">📥 Panduan ukuran:</span>
+          {#each [1, 2, 3, 4, 5, 6] as n (n)}
+            <a
+              href={`/templates/strip-template-${NAMA_BERKAS[n]}.svg`}
+              download={`distudio-strip-${NAMA_BERKAS[n]}.svg`}
+              class="btn btn-ghost btn-xs"
+              title={`Unduh panduan layout ${n} foto`}
+            >{n}</a>
+          {/each}
+        </div>
       </div>
     </div>
 
@@ -297,6 +310,19 @@
 
   .hidden-file-input {
     display: none;
+  }
+
+  .guide-variants {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .guide-variants-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-ink-light);
+    margin-right: 4px;
   }
 
   .import-label {

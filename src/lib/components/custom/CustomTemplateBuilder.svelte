@@ -8,6 +8,16 @@
   export let onClose = () => {};
   export let onSaveAndApply = (template) => {};
 
+  /** Nama berkas panduan SVG per jumlah foto (ukuran nyata PRODUK). */
+  const NAMA_BERKAS = {
+    1: 'bigshot',
+    2: 'twoup',
+    3: 'threeup',
+    4: 'twobytwo',
+    5: 'fiveup',
+    6: 'sixup',
+  };
+
   // Template editable state
   let templateId = initialTemplate ? initialTemplate.id : `custom-${Date.now()}`;
   let templateName = initialTemplate ? initialTemplate.name : 'My Custom Strip';
@@ -1510,15 +1520,18 @@
                   <div class="guide-download-card">
                     <div class="guide-card-icon">📏</div>
                     <div class="guide-card-info">
-                      <h4>2 × 6″ Individual Strip (SVG)</h4>
-                      <p>600 × 1800 px @ 300 DPI. Includes safe margins and 4 suggested photo slots on a separate guide layer.</p>
-                      <a
-                        href="/templates/strip-template-2x6.svg"
-                        download="distudio-strip-template-2x6.svg"
-                        class="btn btn-secondary btn-sm"
-                      >
-                        Download SVG Strip Guide
-                      </a>
+                      <h4>Individual Product Guides — Slot Layouts (SVG)</h4>
+                      <p>Satu berkas per jumlah foto (1–6), ukuran cetak nyata: Big shot 13×7 cm, Two up 15×5 cm (2 salinan di 4R), Three up 15×6 cm, serta kertas 10×15 cm untuk 4–6 foto. Margin aman + susunan slot di lapisan panduan terpisah.</p>
+                      <div class="guide-slot-row" role="group" aria-label="Pilih layout untuk diunduh">
+                        {#each [1, 2, 3, 4, 5, 6] as n (n)}
+                          <a
+                            href={`/templates/strip-template-${NAMA_BERKAS[n]}.svg`}
+                            download={`distudio-strip-${NAMA_BERKAS[n]}.svg`}
+                            class="btn btn-secondary btn-xs"
+                            title={`Layout ${n} foto`}
+                          >{n}</a>
+                        {/each}
+                      </div>
                     </div>
                   </div>
 
@@ -2232,6 +2245,13 @@
     background: var(--color-bg);
     border-radius: var(--radius-md);
     border: 1.5px solid var(--color-border);
+  }
+
+  .guide-slot-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
   }
 
   .guide-card-icon {

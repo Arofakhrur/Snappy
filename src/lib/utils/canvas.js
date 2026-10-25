@@ -1,68 +1,135 @@
 /**
  * Canvas Utility — composes photo strips using Canvas API
- * 
- * Supports both Built-in Presets (Classic, Cobalt, Darkroom, Lavender)
- * and Custom Templates with user-defined artwork overlays, asymmetric/irregular
- * polygon slots, independent photo crop/pan/zoom, and 4R sheet composition.
+ *
+ * Produk strip mengikuti PRODUK (ukuran cetak nyata per jumlah foto),
+ * baik Built-in Presets (Classic, Cobalt, Darkroom, Lavender)
+ * maupun Custom Templates dengan artwork overlays, slot bebas,
+ * dan komposisi lembar 4R.
  */
 
 import { getCustomTemplate } from './customTemplateStorage.js';
 
-/** Built-in Strip template definitions */
-export const TEMPLATES = {
-  classic: {
+/** Built-in Strip templates — kertas foto-booth klasik: kertas paper,
+ * garis rambut tipis di tepi, slot kosong papan catur, caption serif. */
+export const TEMPLATES = {  classic: {
     id: 'classic',
     label: 'Classic',
     bg: '#FBF7F0',
-    frameBg: '#1C1917',
-    photoGap: 8,
-    photoBorderRadius: 6,
-    headerBg: '#1C1917',
-    headerText: '#FCD34D',
-    footerBg: '#1C1917',
-    footerText: '#FBF7F0',
-    accent: '#FCD34D',
+    ink: '#2B2620',
+    accent: '#B98A3F',
+    hairline: '#C7A45C',
+    checkerA: '#EDE7DB',
+    checkerB: '#E1D9C8',
+    slotLine: '#2B26201A',
   },
   cobalt: {
     id: 'cobalt',
     label: 'Cobalt',
-    bg: '#EFF6FF',
-    frameBg: '#2563EB',
-    photoGap: 8,
-    photoBorderRadius: 6,
-    headerBg: '#2563EB',
-    headerText: '#FFFFFF',
-    footerBg: '#2563EB',
-    footerText: '#BFDBFE',
-    accent: '#BFDBFE',
+    bg: '#F4F8FF',
+    ink: '#1D3A6B',
+    accent: '#4A6FA5',
+    hairline: '#7E9EC8',
+    checkerA: '#E8EEF8',
+    checkerB: '#DBE4F2',
+    slotLine: '#1D3A6B1A',
   },
   darkroom: {
     id: 'darkroom',
     label: 'Dark Room',
-    bg: '#1C1917',
-    frameBg: '#1C1917',
-    photoGap: 6,
-    photoBorderRadius: 4,
-    headerBg: '#1C1917',
-    headerText: '#F87171',
-    footerBg: '#1C1917',
-    footerText: '#FBF7F0',
-    accent: '#F87171',
+    bg: '#191715',
+    ink: '#EFE9DD',
+    accent: '#C2503E',
+    hairline: '#6B5F53',
+    checkerA: '#26221F',
+    checkerB: '#1F1B18',
+    slotLine: '#EFE9DD1F',
   },
   lavender: {
     id: 'lavender',
     label: 'Lavender',
-    bg: '#F5F3FF',
-    frameBg: '#A78BFA',
-    photoGap: 8,
-    photoBorderRadius: 8,
-    headerBg: '#A78BFA',
-    headerText: '#FFFFFF',
-    footerBg: '#A78BFA',
-    footerText: '#F5F3FF',
-    accent: '#DDD6FE',
+    bg: '#F5F2FA',
+    ink: '#443161',
+    accent: '#8E77B8',
+    hairline: '#B9A7D6',
+    checkerA: '#EBE5F4',
+    checkerB: '#DFD6F0',
+    slotLine: '#44316117',
   },
 };
+
+/** Produk strip per jumlah foto — ukuran cetak nyata (300 DPI),
+ * mengikuti price list "Custom Ukuran" + nama produk ala katalog booth.
+ * px = cm ÷ 2,54 × 300, dibulatkan genap.
+ *
+ * Layout slot = baris berisi sel, px pada ruang acuan produk sendiri
+ * (pxW × pxH). margin/hairline/footer juga px ruang acuan.
+ */
+export const PRODUK = {
+  1: {
+    nama: 'Big shot',
+    cm: '13 × 7',
+    pxW: 1536, pxH: 828,
+    margin: 40, hairline: 14, gap: 20, footer: 132,
+    copySheet: 1, sheetOrient: 'landscape',
+    rows: [{ h: 616, cells: [{ w: 1456 }] }],
+  },
+  2: {
+    nama: 'Two up',
+    cm: '15 × 5',
+    pxW: 591, pxH: 1772,
+    margin: 20, hairline: 10, gap: 16, footer: 150,
+    copySheet: 2, sheetOrient: 'portrait',
+    rows: [{ h: 783, cells: [{ w: 551 }] }, { h: 783, cells: [{ w: 551 }] }],
+  },
+  3: {
+    nama: 'Three up',
+    cm: '15 × 6',
+    pxW: 709, pxH: 1772,
+    margin: 22, hairline: 10, gap: 16, footer: 150,
+    copySheet: 1, sheetOrient: 'portrait',
+    rows: [{ h: 515, cells: [{ w: 665 }] }, { h: 515, cells: [{ w: 665 }] }, { h: 515, cells: [{ w: 665 }] }],
+  },
+  4: {
+    nama: 'Two by two',
+    cm: '10 × 15',
+    pxW: 1181, pxH: 1772,
+    margin: 32, hairline: 12, gap: 24, footer: 170,
+    copySheet: 1, sheetOrient: 'portrait',
+    rows: [
+      { h: 757, cells: [{ w: 546 }, { w: 546 }] },
+      { h: 757, cells: [{ w: 546 }, { w: 546 }] },
+    ],
+  },
+  5: {
+    nama: 'Five up',
+    cm: '10 × 15',
+    pxW: 1181, pxH: 1772,
+    margin: 32, hairline: 12, gap: 24, footer: 170,
+    copySheet: 1, sheetOrient: 'portrait',
+    rows: [
+      { h: 620, cells: [{ w: 546 }, { w: 546 }] },
+      { h: 620, cells: [{ w: 546 }, { w: 546 }] },
+      { h: 250, cells: [{ w: 1117 }] },
+    ],
+  },
+  6: {
+    nama: 'Six up',
+    cm: '10 × 15',
+    pxW: 1181, pxH: 1772,
+    margin: 32, hairline: 12, gap: 24, footer: 170,
+    copySheet: 1, sheetOrient: 'portrait',
+    rows: [
+      { h: 498, cells: [{ w: 546 }, { w: 546 }] },
+      { h: 498, cells: [{ w: 546 }, { w: 546 }] },
+      { h: 498, cells: [{ w: 546 }, { w: 546 }] },
+    ],
+  },
+};
+
+/** Produk bawaan bila jumlah di luar 1–6 (jaga-jaga). */
+function produkUntuk(count) {
+  return PRODUK[count] || PRODUK[4];
+}
 
 /**
  * Resolve a template argument to a concrete template object.
@@ -170,103 +237,121 @@ export function roundRect(ctx, x, y, w, h, r) {
 }
 
 /**
- * Render a built-in classic/preset strip.
+ * Slot kosong = papan catur (patern "tak ada foto"), alih-alih emoji.
  */
-function renderBuiltinStrip(ctx, images, template, options, stripX, stripY, stripW, stripH) {
+function drawEmptyBoothSlot(ctx, x, y, w, h, t) {
+  ctx.fillStyle = t.checkerA;
+  ctx.fillRect(x, y, w, h);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.fillStyle = t.checkerB;
+  const q = Math.max(7, w / 32);
+  const cols = Math.ceil(w / q);
+  const rows = Math.ceil(h / q);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if ((r + c) % 2 === 0) {
+        ctx.fillRect(x + c * q, y + r * q, q + 0.5, q + 0.5);
+      }
+    }
+  }
+  ctx.restore();
+  ctx.strokeStyle = t.slotLine;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, w - 1), Math.max(0, h - 1));
+}
+
+/**
+ * Render a built-in preset strip in the classic booth-paper look:
+ * paper sheet, thin hairline frame, per-product slot layout, serif title
+ * + spaced "PHOTO BOOTH" mark in the footer.
+ *
+ * Geometri mengikuti PRODUK[count]: ruang acuan = px cetak 300 DPI produk
+ * itu, diskalakan ke stripW/pxW & stripH/pxH — pratinjau di ukuran mana pun
+ * = miniatur persis hasil cetak.
+ */
+function renderBuiltinStrip(ctx, images, template, options, stripX, stripY, stripW, stripH, count) {
   const { caption, showDate } = options;
   const t = template;
-  const pad = Math.round(stripW * 0.04);
+  const p = produkUntuk(count);
+  const k = stripW / p.pxW;
+  const ky = stripH / p.pxH;
 
-  // Background
+  // Paper
   ctx.fillStyle = t.bg;
   ctx.fillRect(stripX, stripY, stripW, stripH);
 
-  // Header bar
-  const headerH = Math.round(stripH * 0.065);
-  ctx.fillStyle = t.headerBg;
-  ctx.fillRect(stripX, stripY, stripW, headerH);
+  // Hairline frame near the edge
+  const inset = p.hairline * k;
+  ctx.strokeStyle = t.hairline;
+  ctx.lineWidth = Math.max(1, 1.6 * k);
+  ctx.strokeRect(stripX + inset, stripY + inset, stripW - inset * 2, stripH - inset * 2);
 
-  // Header text — brand
-  ctx.fillStyle = t.headerText;
-  ctx.font = `bold ${Math.round(headerH * 0.48)}px 'JetBrains Mono', monospace`;
+  // Slot area (dalam ruang acuan): baris ditempatkan di tengah vertikal
+  const areaY = p.margin * ky;
+  const footerH = p.footer * ky;
+  const footerY = stripY + stripH - footerH;
+  const areaH = footerY - p.margin * ky - areaY;
+  const usedH = p.rows.reduce((a, r) => a + r.h, 0) * ky + (p.rows.length - 1) * p.gap * ky;
+  let cursorY = areaY + (areaH - usedH) / 2;
+  let slotIndex = 0;
+  for (const row of p.rows) {
+    const rowH = row.h * ky;
+    const rowW = row.cells.reduce((a, c) => a + c.w, 0) * k + (row.cells.length - 1) * p.gap * k;
+    let cursorX = stripX + (stripW - rowW) / 2;
+    for (const cell of row.cells) {
+      const w = cell.w * k;
+      const img = images[slotIndex];
+      if (img) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(cursorX, cursorY, w, rowH);
+        ctx.clip();
+        drawCroppedImage(ctx, img, cursorX, cursorY, w, rowH);
+        ctx.restore();
+      } else {
+        drawEmptyBoothSlot(ctx, cursorX, cursorY, w, rowH, t);
+      }
+      slotIndex++;
+      cursorX += w + p.gap * k;
+    }
+    cursorY += rowH + p.gap * ky;
+  }
+
+  // Footer: serif title + spaced PHOTO BOOTH mark (± tanggal)
+  const title = (caption || '').trim().slice(0, 30) || p.nama;
+  const cx = stripX + stripW / 2;
+
+  ctx.fillStyle = t.ink;
+  ctx.font = `500 ${Math.round(0.34 * footerH)}px 'Playfair Display', 'Georgia', serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('DISTUDIO', stripX + stripW / 2, stripY + headerH / 2);
+  ctx.fillText(title, cx, footerY + 0.34 * footerH);
 
-  // Footer bar
-  const footerH = Math.round(stripH * 0.075);
-  const footerY = stripY + stripH - footerH;
-  ctx.fillStyle = t.footerBg;
-  ctx.fillRect(stripX, footerY, stripW, footerH);
+  try {
+    ctx.letterSpacing = `${Math.round(0.3 * 0.11 * footerH * k)}px`;
+  } catch { /* browser lama: tanpa letterSpacing */ }
+  ctx.fillStyle = t.accent;
+  ctx.font = `600 ${Math.round(0.11 * footerH)}px 'Inter', sans-serif`;
+  ctx.fillText('PHOTO BOOTH', cx, footerY + 0.68 * footerH);
+  try {
+    ctx.letterSpacing = '0px';
+  } catch { }
 
-  // Footer: caption
-  if (caption) {
-    ctx.fillStyle = t.footerText;
-    const capFontSize = Math.round(footerH * 0.35);
-    ctx.font = `600 ${capFontSize}px 'Inter', sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const capY = showDate ? footerY + footerH * 0.35 : footerY + footerH * 0.5;
-    ctx.fillText(caption.slice(0, 30), stripX + stripW / 2, capY);
-  }
-
-  // Footer: date
   if (showDate) {
     const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    ctx.fillStyle = t.accent;
-    const dateFontSize = Math.round(footerH * 0.28);
-    ctx.font = `${dateFontSize}px 'Inter', sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const dateY = caption ? footerY + footerH * 0.72 : footerY + footerH * 0.5;
-    ctx.fillText(date, stripX + stripW / 2, dateY);
+    ctx.fillStyle = t.ink;
+    try {
+      ctx.letterSpacing = `${Math.round(1.5 * k)}px`;
+    } catch { }
+    ctx.font = `${Math.round(0.11 * footerH)}px 'Inter', sans-serif`;
+    ctx.fillText(date.toUpperCase(), cx, footerY + 0.88 * footerH);
+    try {
+      ctx.letterSpacing = '0px';
+    } catch { }
   }
-
-  // Photos area
-  const photoAreaY = stripY + headerH + pad;
-  const photoAreaH = footerY - photoAreaY - pad;
-  const photoCount = images.length || 4;
-  const totalGap = (photoCount - 1) * t.photoGap;
-  const photoH = (photoAreaH - totalGap) / photoCount;
-  const photoW = stripW - pad * 2;
-  const photoX = stripX + pad;
-  const r = t.photoBorderRadius;
-
-  images.forEach((img, i) => {
-    const photoY = photoAreaY + i * (photoH + t.photoGap);
-
-    if (img) {
-      ctx.save();
-      roundRect(ctx, photoX, photoY, photoW, photoH, r);
-      ctx.clip();
-      drawCroppedImage(ctx, img, photoX, photoY, photoW, photoH);
-      ctx.restore();
-    } else {
-      ctx.fillStyle = t.frameBg + '33';
-      roundRect(ctx, photoX, photoY, photoW, photoH, r);
-      ctx.fill();
-      ctx.fillStyle = t.frameBg + '88';
-      ctx.font = `${Math.round(photoH * 0.15)}px 'Inter', sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('📷', photoX + photoW / 2, photoY + photoH / 2);
-    }
-
-    ctx.strokeStyle = t.frameBg + '22';
-    ctx.lineWidth = 1;
-    roundRect(ctx, photoX, photoY, photoW, photoH, r);
-    ctx.stroke();
-  });
-
-  // Header accent dots
-  const dotR = Math.round(headerH * 0.15);
-  const dotY = stripY + headerH / 2;
-  [0.12, 0.2, 0.8, 0.88].forEach((xRatio) => {
-    ctx.fillStyle = t.accent;
-    ctx.beginPath();
-    ctx.arc(stripX + stripW * xRatio, dotY, dotR, 0, Math.PI * 2);
-    ctx.fill();
-  });
 }
 
 /**
@@ -477,13 +562,15 @@ async function renderCustomStrip(ctx, images, template, options, stripX, stripY,
 }
 
 /**
- * Render a single photo strip onto a canvas.
+ * Render a single photo strip onto a canvas. count = jumlah foto
+ * (menentukan produk & layout built-in).
  */
 export async function renderSingleStrip(ctx, images, template, options, stripX, stripY, stripW, stripH) {
+  const count = images.length || 4;
   if (template.isCustom || template.slots) {
     await renderCustomStrip(ctx, images, template, options, stripX, stripY, stripW, stripH);
   } else {
-    renderBuiltinStrip(ctx, images, template, options, stripX, stripY, stripW, stripH);
+    renderBuiltinStrip(ctx, images, template, options, stripX, stripY, stripW, stripH, count);
   }
 }
 
@@ -516,22 +603,36 @@ export async function renderStripPreview(canvas, photoDataUrls, templateOrKey, o
 }
 
 /**
- * Render the full export canvas (1200 × 1800, two strips side by side = 4R).
- * 
+ * Render the full print sheet (4R = 10,2 × 15,2 cm @ 300 DPI = 1200 × 1800,
+ * diputar menyamping untuk produk landscape).
+ *
+ * Isi lembar mengikuti PRODUK: salinan berukuran sejati di tengah lembar;
+ * Two up = 2 salinan berdampingan + garis potong; produk lain 1 salinan.
+ *
  * @param {string[]} photoDataUrls
  * @param {string|object} templateOrKey
  * @param {object} options
  * @returns {Promise<HTMLCanvasElement>}
  */
 export async function renderExportCanvas(photoDataUrls, templateOrKey, options = {}) {
-  const EXPORT_W = 1200;
-  const EXPORT_H = 1800;
-  const STRIP_W = 588;
-  const GAP = 24;
+  const count = (photoDataUrls || []).length || 4;
+  const p = produkUntuk(count);
+  const landscape = p.sheetOrient === 'landscape';
+
+  const SHEET_W = landscape ? 1800 : 1200;
+  const SHEET_H = landscape ? 1200 : 1800;
+  const copies = p.copySheet;
+
+  // Semua salinan dicetak UKURAN SEJATI (px 300 DPI = cm asli), di tengah
+  // lembar. Gap 16 px hanya antar 2 salinan Two up (591×2 + 16 = 1198 ≤ 1200).
+  const GAP_SALIN = 16;
+  const stripW = p.pxW;
+  const stripH = p.pxH;
+  const startY = Math.round((SHEET_H - stripH) / 2);
 
   const canvas = document.createElement('canvas');
-  canvas.width = EXPORT_W;
-  canvas.height = EXPORT_H;
+  canvas.width = SHEET_W;
+  canvas.height = SHEET_H;
 
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = true;
@@ -541,7 +642,7 @@ export async function renderExportCanvas(photoDataUrls, templateOrKey, options =
 
   // Fill 4R sheet background
   ctx.fillStyle = template.backgroundColor || template.bg || '#FFFFFF';
-  ctx.fillRect(0, 0, EXPORT_W, EXPORT_H);
+  ctx.fillRect(0, 0, SHEET_W, SHEET_H);
 
   const images = await Promise.all(
     (photoDataUrls || []).map((url) =>
@@ -549,25 +650,23 @@ export async function renderExportCanvas(photoDataUrls, templateOrKey, options =
     )
   );
 
-  const leftX = (EXPORT_W - STRIP_W * 2 - GAP) / 2;
-  const rightX = leftX + STRIP_W + GAP;
+  const startX = Math.round((SHEET_W - stripW * copies - (copies - 1) * GAP_SALIN) / 2);
+  for (let i = 0; i < copies; i++) {
+    await renderSingleStrip(ctx, images, template, options, startX + i * (stripW + GAP_SALIN), startY, stripW, stripH);
+  }
 
-  // Left strip (Strip 1)
-  await renderSingleStrip(ctx, images, template, options, leftX, 0, STRIP_W, EXPORT_H);
-
-  // Right strip (Strip 2 - duplicate copy)
-  await renderSingleStrip(ctx, images, template, options, rightX, 0, STRIP_W, EXPORT_H);
-
-  // Center Cutting guide line
-  const centerX = leftX + STRIP_W + GAP / 2;
-  ctx.setLineDash([8, 8]);
-  ctx.strokeStyle = '#00000033';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(centerX, 0);
-  ctx.lineTo(centerX, EXPORT_H);
-  ctx.stroke();
-  ctx.setLineDash([]);
+  // Cutting guide line between copies
+  if (copies > 1) {
+    const centerX = startX + stripW + GAP_SALIN / 2;
+    ctx.setLineDash([8, 8]);
+    ctx.strokeStyle = '#00000033';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(centerX, 0);
+    ctx.lineTo(centerX, SHEET_H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
 
   return canvas;
 }

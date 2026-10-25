@@ -25,7 +25,7 @@ The application automatically handles **4R (4 × 6 inch) print duplication**, pl
    - Hide/delete "guides-layer"
              │
              ▼
-3. Export Artwork as PNG (with transparency) or SVG at 600 × 1800 px
+3. Export Artwork as PNG (with transparency) or SVG — pakai ukuran produk yang dipilih (lihat panduan SVG per produk)
              │
              ▼
 4. In DISTUDIO Photobooth:
@@ -40,7 +40,7 @@ The application automatically handles **4R (4 × 6 inch) print duplication**, pl
 6. Save & Apply Template (Persisted in local library for future sessions)
              │
              ▼
-7. Print on 4R Paper or Download 300 DPI PNG (Two strips on 4 × 6″ sheet)
+7. Print on 4R Paper or Download 300 DPI PNG (ukuran produk; Two up = 2 salinan berdampingan)
 ```
 
 ---
@@ -52,16 +52,16 @@ The application automatically handles **4R (4 × 6 inch) print duplication**, pl
 1. In the app, navigate to the **Design Strip** screen.
 2. Select the **Custom Frames** tab and click **+ Create Custom Template** or **Browse Library**.
 3. Under the **Guides** tab, download the template:
-   - **`strip-template-2x6.svg`**: Individual 2 × 6″ strip guide (600 × 1800 px @ 300 DPI target).
+   - **`strip-template-{bigshot,twoup,threeup,twobytwo,fiveup,sixup}.svg`**: panduan produk per jumlah foto (1–6) dengan ukuran cetak nyata — Big shot 13×7 cm, Two up 15×5 cm, Three up 15×6 cm, Two by two / Five up / Six up 10×15 cm (@ 300 DPI).
    - **`sheet-template-4r.svg`**: 4 × 6″ 4R print sheet guide showing two strips side-by-side with the center cut line.
 
 ### 2. Design Your Custom Frame
 
 Open the SVG in Figma, Photoshop, Illustrator, or Affinity Designer.
 
-- **Canvas Size:** 600 × 1800 px (exact 1:3 aspect ratio).
-- **Physical Size:** 2 × 6 inches at 300 DPI.
-- **Safe Margin:** Keep essential logos, event titles, and guest text at least 36–60 px (5 mm) away from all outer edges.
+- **Canvas Size:** ikuti berkas panduan produk — masing-masing pakai px 300 DPI ukuran sejatinya (contoh: Two up 591 × 1772 px; Big shot 1536 × 828 px).
+- **Physical Size:** ukuran produk (Big shot 13×7 cm, Two up 15×5 cm, Three up 15×6 cm, kertas 10×15 cm untuk 4–6 foto).
+- **Safe Margin:** ikuti garis `SAFE PRINT MARGIN` di lapisan panduan (3–3,5 mm dari tepi).
 - **Photo Windows:** Cut out the areas where photos should show through and ensure the background inside those cutouts is **100% transparent (alpha = 0)**.
 - **Guide Layer:** The template contains a group named `guides-layer`. Make sure to **hide or delete** this group before exporting your artwork.
 - **Export Format:** Export as **32-bit PNG (with transparency)** or **SVG**.
@@ -72,7 +72,7 @@ Open the SVG in Figma, Photoshop, Illustrator, or Affinity Designer.
 
 1. In the **Custom Template Builder**, switch to the **Frame Art** tab.
 2. Drag & drop or browse to upload your exported PNG/SVG artwork.
-   - The app will validate dimensions and warn if resolution is below 600 × 1800 px.
+   - The app will validate dimensions and warn if resolution is below the papan desain 600 × 1800 px (papan custom tetap rasio 1:3; pas untuk produk Two up — produk rasio lain akan diskalakan menyesuaikan).
    - Choose **Overlay** (recommended) so your frame artwork and decorative borders sit cleanly on top of the photographs.
 3. Switch to the **Slots** tab to define your photo slots:
    - Click **+ Rectangle** for standard photo windows.

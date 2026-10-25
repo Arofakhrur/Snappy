@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { session, goTo, resetSession } from '#lib/stores/session.js';
-  import { renderExportCanvas } from '#lib/utils/canvas.js';
+  import { PRODUK, renderExportCanvas } from '#lib/utils/canvas.js';
   import { downloadStripPNG, printStrip } from '#lib/utils/export.js';
   import { saveGallerySession, buildQRCodeDataUrl, resolveGalleryUrl, generateId } from '#lib/utils/gallery.js';
   import PrinterIllus from '#lib/components/illustrations/PrinterIllus.svelte';
@@ -29,6 +29,11 @@
 
   $: activeTemplate = customTemplateData || templateKey;
 
+  // Produk aktif = ukuran cetak nyata per jumlah foto
+  $: produk = PRODUK[$session.photoCount] || PRODUK[4];
+  $: sheetLandscape = produk.sheetOrient === 'landscape';
+  $: copies = produk.copySheet;
+
   onMount(async () => {
     // Generate QR instantly without waiting for sheet canvas render
     generateGalleryQR();
@@ -39,6 +44,8 @@
     if (!previewCanvas) return;
     try {
       const fullCanvas = await renderExportCanvas(photos, activeTemplate, { caption, showDate });
+      previewCanvas.width = fullCanvas.width > fullCanvas.height ? 600 : 400;
+      previewCanvas.height = fullCanvas.width > fullCanvas.height ? 400 : 600;
       const ctx = previewCanvas.getContext('2d');
       if (!ctx) return;
       ctx.imageSmoothingEnabled = true;
@@ -162,17 +169,17 @@
     <!-- Left Column: 4R Sheet Preview -->
     <div class="sheet-preview-col">
       <div class="sheet-card">
-        <div class="sheet-badge">4 × 6" (4R) Sheet</div>
-        <div class="canvas-wrapper">
+        <div class="sheet-badge">4R · {produk.cm} cm · {copies === 2 ? '2 salinan' : '1 salinan'}</div>
+        <div class="canvas-wrapper" style="aspect-ratio: {sheetLandscape ? '3 / 2' : '2 / 3'};">
           <canvas
             bind:this={previewCanvas}
-            width="400"
-            height="600"
+            width={sheetLandscape ? 600 : 400}
+            height={sheetLandscape ? 400 : 600}
             class="sheet-canvas"
             aria-label="4R printable sheet preview"
           ></canvas>
         </div>
-        <p class="sheet-caption">2 strip dengan garis potong tengah</p>
+        <p class="sheet-caption">{copies === 2 ? '2 salinan — potong di garis tengah' : '1 salinan utuh di lembar 4R'}</p>
       </div>
     </div>
 
@@ -308,7 +315,7 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            <span>Download PNG (1200 × 1800)</span>
+            <span>Download PNG ({sheetLandscape ? '1800 × 1200' : '1200 × 1800'})</span>
           {/if}
         </button>
       </div>
@@ -355,14 +362,16 @@
 
         <ul class="printer-checklist">
           <li><strong>Ukuran Kertas:</strong> 4 × 6 inches (4R / Photo Paper)</li>
-          <li><strong>Orientasi:</strong> Portrait (Tegak)</li>
+          <li><strong>Orientasi:</strong> {sheetLandscape ? 'Landscape (Menyamping)' : 'Portrait (Tegak)'}</li>
           <li><strong>Skala (Scale):</strong> 100% (Jangan pilih "Fit to Page")</li>
           <li><strong>Margin:</strong> None / Borderless</li>
           <li><strong>Background Graphics:</strong> Centang / ON</li>
         </ul>
 
         <div class="cutting-hint-modal">
-          ✂️ <strong>Setelah cetak:</strong> Potong sepanjang garis putus-putus tengah untuk membagi menjadi 2 strip kenang-kenangan ukuran 2 × 6″.
+          ✂️ <strong>Setelah cetak:</strong> {copies === 2
+            ? 'Potong sepanjang garis putus-putus tengah untuk membagi menjadi 2 salinan Two up ukuran 15 × 5 cm.'
+            : `Tidak perlu memotong — salinan tunggal ${produk.nama} ukuran ${produk.cm} cm sudah utuh di tengah lembar.`}
         </div>
       </div>
     </div>

@@ -127,12 +127,12 @@ The MVP includes:
 - **FR-025** — The app shall render the final strip to a PNG at print resolution.
 - **FR-026** — The app shall provide a Download PNG button.
 - **FR-027** — The app shall provide a Print button that opens the browser print dialog.
-- **FR-028** — The print layout shall target a 4 × 6 inch page with two strips side by side.
+- **FR-028** — The print layout shall target a 4 × 6 inch page; copy count and orientation follow the active product (Two up = 2 copies side by side, Big shot = landscape sheet, others = 1 true-size copy).
 - **FR-029** — Non-print UI shall be hidden during printing.
 - **FR-030** — The app shall display setup guidance for the user before printing.
 
 ### Custom Template Builder (Revision Add-On)
-- **FR-033** — The app shall provide downloadable 2 × 6″ strip (SVG / PNG at 600 × 1800 px, 300 DPI) and 4 × 6″ 4R print-sheet (1200 × 1800 px, 300 DPI) design templates with safe margins and cutting guides.
+- **FR-033** — The app shall provide downloadable product-size strip guides (SVG, 300 DPI) — Big shot 13×7 cm, Two up 15×5 cm, Three up 15×6 cm, Two by two / Five up / Six up 10×15 cm — plus a 4 × 6″ 4R print-sheet (1200 × 1800 px, 300 DPI) design template with safe margins and cutting guides.
 - **FR-034** — The app shall support importing custom frame artwork in PNG and SVG formats with validation for resolution, aspect ratio, and transparency.
 - **FR-035** — The app shall provide an interactive visual photo-slot editor supporting rectangular, irregular polygon, and circular slot geometries with drag-to-move, corner resize, and vertex handle manipulation.
 - **FR-036** — The app shall allow manual assignment of each defined slot to any available captured photo in the current session.
