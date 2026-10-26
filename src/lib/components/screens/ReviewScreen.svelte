@@ -5,6 +5,15 @@
   $: photos = $session.photos;
   $: photoCount = $session.photoCount;
 
+  // Dynamically detected aspect ratio matching the captured photo
+  let detectedAspect = '4 / 3';
+
+  function handleImageLoad(e) {
+    if (e.target && e.target.naturalWidth && e.target.naturalHeight) {
+      detectedAspect = `${e.target.naturalWidth} / ${e.target.naturalHeight}`;
+    }
+  }
+
   function handleRetakeOne(index) {
     setRetakeIndex(index);
     goTo('camera');
@@ -60,9 +69,9 @@
     <div class="photo-grid" class:grid-3={photoCount === 3} class:grid-4={photoCount === 4}>
       {#each photos as photo, i}
         <div class="photo-card" style="animation-delay: {i * 60}ms">
-          <div class="photo-slot">
+          <div class="photo-slot" style="aspect-ratio: {detectedAspect};">
             {#if photo}
-              <img src={photo} alt="Captured photo {i + 1}" />
+              <img src={photo} alt="Captured photo {i + 1}" on:load={handleImageLoad} />
             {:else}
               <div class="photo-empty">
                 <span>Photo {i + 1}</span>
@@ -166,8 +175,9 @@
   .photo-grid {
     display: grid;
     gap: var(--space-4);
-    max-width: 560px;
+    max-width: 860px;
     margin: 0 auto;
+    width: 100%;
   }
 
   .grid-4 {
@@ -186,7 +196,6 @@
   }
 
   .photo-slot {
-    aspect-ratio: 3 / 4;
     border-radius: var(--radius-md);
     overflow: hidden;
     background: var(--color-border);
@@ -233,7 +242,7 @@
     padding: 4px 10px;
   }
 
-  /* Desktop: wider grid */
+  /* Desktop: 4 columns for 4 photos, 3 for 3 */
   @media (min-width: 640px) {
     .grid-4 {
       grid-template-columns: repeat(4, 1fr);
