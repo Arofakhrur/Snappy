@@ -37,14 +37,16 @@
     position: absolute;
     top: 16px;
     right: 16px;
-    z-index: 3;
+    z-index: 50;
     width: 46px;
     height: 46px;
     display: grid;
     place-items: center;
     border: 1px solid var(--hairline);
     border-radius: 50%;
-    background: transparent;
+    background: var(--surface-trans, rgba(var(--bg-rgb, 255, 255, 255), 0.7));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--fg-dim);
     cursor: pointer;
     outline: none;
