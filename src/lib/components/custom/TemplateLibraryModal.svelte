@@ -1,27 +1,27 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { session, setCustomTemplate } from '#lib/stores/session.js';
+  import { session, setCustomTemplate } from '#lib/stores/session';
   import {
     getAllCustomTemplates,
     deleteCustomTemplate,
     duplicateCustomTemplate,
     exportTemplateFile,
     importTemplateFile
-  } from '#lib/utils/customTemplateStorage.js';
+  } from '#lib/utils/customTemplateStorage';
+  import type { CustomTemplate } from '#lib/types';
 
-  export let onClose = () => {};
-  export let onSelectTemplate = (template) => {};
-  export let onEditTemplate = (template) => {};
-  export let onCreateNew = () => {};
+  export let onClose: () => void = () => {};
+  export let onSelectTemplate: (template: CustomTemplate) => void = () => {};
+  export let onEditTemplate: (template: CustomTemplate) => void = () => {};
+  export let onCreateNew: () => void = () => {};
 
-  /** @type {Array<import('#lib/utils/customTemplateStorage.js').CustomTemplate>} */
-  let templates = [];
+  let templates: CustomTemplate[] = [];
   let isLoading = true;
   let importError = '';
   let activeTemplateId = $session.selectedTemplate;
 
   /** Nama berkas panduan SVG per jumlah foto (ukuran nyata PRODUK). */
-  const NAMA_BERKAS = {
+  const NAMA_BERKAS: Record<number, string> = {
     1: 'bigshot',
     2: 'twoup',
     3: 'threeup',
@@ -34,36 +34,37 @@
     await loadTemplates();
   });
 
-  async function loadTemplates() {
+  async function loadTemplates(): Promise<void> {
     isLoading = true;
     try {
       templates = await getAllCustomTemplates();
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Failed to load custom templates:', e);
     } finally {
       isLoading = false;
     }
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(id: string): Promise<void> {
     if (!confirm('Are you sure you want to delete this custom template?')) return;
     await deleteCustomTemplate(id);
     await loadTemplates();
   }
 
-  async function handleDuplicate(id) {
+  async function handleDuplicate(id: string): Promise<void> {
     const copy = await duplicateCustomTemplate(id);
     if (copy) {
       await loadTemplates();
     }
   }
 
-  function handleExport(template) {
+  function handleExport(template: CustomTemplate): void {
     exportTemplateFile(template);
   }
 
-  async function handleImportFile(event) {
-    const file = event.target.files && event.target.files[0];
+  async function handleImportFile(event: Event): Promise<void> {
+    const targetEl = event.target as HTMLInputElement | null;
+    const file = (targetEl?.files && targetEl.files[0]) || null;
     if (!file) return;
 
     importError = '';
@@ -71,9 +72,9 @@
       const imported = await importTemplateFile(file);
       await loadTemplates();
       onSelectTemplate(imported);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to import template package:', err);
-      importError = 'Invalid template package file: ' + err.message;
+      importError = 'Invalid template package file: ' + (err instanceof Error ? err.message : String(err));
     }
   }
 </script>

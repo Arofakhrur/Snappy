@@ -1,7 +1,7 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { PRODUK, renderStripPreview } from '#lib/utils/canvas.js';
-  import { session, goTo, setPhotoCount } from '#lib/stores/session.js';
+  import { PRODUK, renderStripPreview } from '#lib/utils/canvas';
+  import { session, goTo, setPhotoCount } from '#lib/stores/session';
   import ThemeToggle from '#lib/components/kiosk/ThemeToggle.svelte';
 
   /**
@@ -14,15 +14,15 @@
    */
   const JUMLAH = [1, 2, 3, 4, 5, 6];
 
-  let sectionEl;
-  let produkEl;
-  let etalaseEl;
-  let deckGulir;
+  let sectionEl: HTMLElement;
+  let produkEl: HTMLElement;
+  let etalaseEl: HTMLDivElement;
+  let deckGulir: HTMLDivElement;
   /* Ref tiap item dalam each: wajib $state — bind:this ke indeks larik biasa
      tidak reaktif di Svelte 5 (peringatan binding_property_non_reactive) */
-  let slideEls = $state([]);
-  let etalaseCanvases = $state([]);
-  let deckCanvases = $state([]);
+  let slideEls: (HTMLDivElement | undefined)[] = $state([]);
+  let etalaseCanvases: (HTMLCanvasElement | undefined)[] = $state([]);
+  let deckCanvases: (HTMLCanvasElement | undefined)[] = $state([]);
   let etalaseSig = '';
   let deckSig = '';
 
@@ -30,8 +30,8 @@
   let tinggi = $state(280);
   let lebarEtalase = $state(0);
 
-  const produk = (n) => PRODUK[n] || PRODUK[4];
-  const rasio = (n) => produk(n).pxW / produk(n).pxH;
+  const produk = (n: number) => PRODUK[n] || PRODUK[4];
+  const rasio = (n: number): number => produk(n).pxW / produk(n).pxH;
 
   /* Slot seragam: semua slide selebar ini supaya snap-tengah presisi
      sampai slide tepi (Big shot = terlebar → jadi patokan slot) */
@@ -52,7 +52,7 @@
   const gerakHalus = () =>
     window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
-  function ukur() {
+  function ukur(): void {
     if (!sectionEl) return;
     const d = getComputedStyle(sectionEl);
     const ruang =
@@ -120,7 +120,7 @@
   /* ── Sinkron etalase ⇄ jumlah (dua arah, tanpa umpan balik liar) ── */
 
   let gulirTerprogram = false;
-  let waktuGulir = 0;
+  let waktuGulir: ReturnType<typeof setTimeout> | undefined;
   let rafSinkron = 0;
   let sudahPusat = false;
 
@@ -129,7 +129,7 @@
    *  jika scroll-snap mandatory aktif (luncur berhenti di tengah jalan).
    *  Klik beruntun (luncur masih jalan) → loncat langsung, bukan luncur
    *  baru di atas luncur lama. Pulihan snap menunggu scrollend. */
-  function pusatkan(n, halus) {
+  function pusatkan(n: number, halus: boolean): void {
     const el = slideEls[n - 1];
     if (!el || !etalaseEl) return;
     const e = etalaseEl;
@@ -148,7 +148,7 @@
   }
 
   /** Usap bebas → slide terdekat dari tengah = jumlah terpilih. */
-  function saatGulir() {
+  function saatGulir(): void {
     if (gulirTerprogram || rafSinkron) return;
     rafSinkron = requestAnimationFrame(() => {
       rafSinkron = 0;
@@ -182,12 +182,12 @@
     }
   });
 
-  function pilih(n) {
+  function pilih(n: number): void {
     setPhotoCount(n);
     pusatkan(n, true);
   }
 
-  function handleAmbil() {
+  function handleAmbil(): void {
     goTo('camera');
   }
 </script>

@@ -1,16 +1,16 @@
-<script>
-  import { session, goTo, setRetakeIndex, beginCapture } from '#lib/stores/session.js';
-  import { stopCamera } from '#lib/utils/camera.js';
+<script lang="ts">
+  import { session, goTo, setRetakeIndex, beginCapture } from '#lib/stores/session';
+  import { stopCamera } from '#lib/utils/camera';
 
   $: photos = $session.photos;
   $: photoCount = $session.photoCount;
 
-  function handleRetakeOne(index) {
+  function handleRetakeOne(index: number): void {
     setRetakeIndex(index);
     goTo('camera');
   }
 
-  function handleRetakeAll() {
+  function handleRetakeAll(): void {
     // Stop camera, wipe photos completely, and begin capture fresh
     stopCamera();
     session.update((s) => ({
@@ -24,12 +24,12 @@
     }));
   }
 
-  function handleBack() {
+  function handleBack(): void {
     // Back from review means discarding the captured batch to retake
     handleRetakeAll();
   }
 
-  function handleContinue() {
+  function handleContinue(): void {
     goTo('editor');
   }
 </script>

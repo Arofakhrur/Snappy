@@ -1,23 +1,22 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { session, goTo, resetSession } from '#lib/stores/session.js';
-  import { PRODUK, renderExportCanvas } from '#lib/utils/canvas.js';
-  import { downloadStripPNG, printStrip } from '#lib/utils/export.js';
-  import { saveGallerySession, buildQRCodeDataUrl, resolveGalleryUrl, generateId } from '#lib/utils/gallery.js';
+  import { session, goTo, resetSession } from '#lib/stores/session';
+  import { PRODUK, renderExportCanvas } from '#lib/utils/canvas';
+  import { downloadStripPNG, printStrip } from '#lib/utils/export';
+  import { saveGallerySession, buildQRCodeDataUrl, resolveGalleryUrl, generateId } from '#lib/utils/gallery';
   import PrinterIllus from '#lib/components/illustrations/PrinterIllus.svelte';
 
-  /** @type {HTMLCanvasElement} */
-  let previewCanvas;
+  let previewCanvas: HTMLCanvasElement;
   let isPrinting = false;
   let isDownloading = false;
   let downloadSuccess = false;
-  let printError = null;
+  let printError: string | null = null;
 
   // QR Gallery state
-  let qrImageUrl = null;
-  let galleryUrl = null;
+  let qrImageUrl: string | null = null;
+  let galleryUrl: string | null = null;
   let galleryReady = false;
-  let galleryError = null;
+  let galleryError: string | null = null;
   let copiedUrl = false;
   let showPrinterInfo = false;
 
@@ -40,7 +39,7 @@
     await drawSheetPreview();
   });
 
-  async function drawSheetPreview() {
+  async function drawSheetPreview(): Promise<void> {
     if (!previewCanvas) return;
     try {
       const fullCanvas = await renderExportCanvas(photos, activeTemplate, { caption, showDate });
@@ -57,7 +56,7 @@
     }
   }
 
-  async function generateGalleryQR() {
+  async function generateGalleryQR(): Promise<void> {
     try {
       // 1. Generate unique session ID immediately
       const sessionId = generateId();
@@ -95,7 +94,7 @@
     }
   }
 
-  async function handlePrint() {
+  async function handlePrint(): Promise<void> {
     if (isPrinting) return;
     isPrinting = true;
     printError = null;
@@ -109,7 +108,7 @@
     }
   }
 
-  async function handleDownload() {
+  async function handleDownload(): Promise<void> {
     if (isDownloading) return;
     isDownloading = true;
     printError = null;
@@ -125,11 +124,11 @@
     }
   }
 
-  function handleNewSession() {
+  function handleNewSession(): void {
     resetSession();
   }
 
-  function copyGalleryUrl() {
+  function copyGalleryUrl(): void {
     if (!galleryUrl) return;
     navigator.clipboard.writeText(galleryUrl).then(() => {
       copiedUrl = true;
@@ -212,7 +211,7 @@
           <span class="qr-clean-hint">Arahkan kamera HP ke QR</span>
         </div>
 
-        {#if galleryReady && qrImageUrl}
+        {#if galleryReady && qrImageUrl && galleryUrl}
           <div class="qr-box">
             <img src={qrImageUrl} alt="QR Code untuk mengunduh foto" class="qr-code-img" />
           </div>

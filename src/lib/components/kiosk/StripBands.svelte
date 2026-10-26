@@ -1,12 +1,12 @@
-<script>
+<script lang="ts">
   /**
    * Pita lanskap di tepi atas & bawah (motif layar mulai): strip portrait
    * diputar 90 derajat jadi gulung mentape menyamping, lalu berjajar dan
    * meluncur horizontal. Opasitasnya rendah — nilai ikut tema lewat
    * --strip-ghost dari .kiosk-scope. Data rasio strip dibaca dari
-   * stripAssets.js (dipakai juga oleh layar pilih strip).
+   * stripAssets.ts (dipakai juga oleh layar pilih strip).
    */
-  import { strips, order } from './stripAssets.js';
+  import { strips, order } from './stripAssets';
 
   // 4 gulung per setengah pita: panjang tape lanskap ~2.7-2.97 × tinggi,
   // sehingga 4 × pitch cukup menutup lebar kios hingga ~1920px. Karena
@@ -14,7 +14,7 @@
   // Pita bawah diputar 5 posisi agar tidak mengulang susunan pita atas.
   const stripOrder = order.map((i) => strips[i]);
 
-  function lineImages(start) {
+  function lineImages(start: number) {
     return Array.from({ length: 4 }, (_, k) => stripOrder[(start + k) % 10]);
   }
 

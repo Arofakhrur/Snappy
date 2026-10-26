@@ -1,14 +1,14 @@
-<script>
+<script lang="ts">
   /**
    * Sulih tema kios: bulat kecil di pojok kanan atas. Konfigurasi operator,
    * bukan bagian alur pengunjung; nilainya tetap hidup lewat localStorage
    * (disimpan oleh setTheme di session store).
    */
-  import { session, setTheme } from '#lib/stores/session.js';
+  import { session, setTheme } from '#lib/stores/session';
 
   $: theme = $session.theme;
 
-  function toggleTheme() {
+  function toggleTheme(): void {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   }
 </script>

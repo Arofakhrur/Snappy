@@ -1,6 +1,5 @@
-<script>
-  /** @type {string} */
-  export let size = '220';
+<script lang="ts">
+  export let size: string = '220';
 </script>
 
 <!-- Stylized camera character for start screen -->

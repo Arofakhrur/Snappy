@@ -1,5 +1,5 @@
-<script>
-	import { session } from '#lib/stores/session.js';
+<script lang="ts">
+	import { session } from '#lib/stores/session';
 	import StartScreen from '#lib/components/screens/StartScreen.svelte';
 	import StripSelectScreen from '#lib/components/screens/StripSelectScreen.svelte';
 	import CameraScreen from '#lib/components/screens/CameraScreen.svelte';
@@ -12,7 +12,7 @@
 	$: screen = $session.screen;
 
 	// Check for gallery QR-code scan: ?gallery=SESSION_ID
-	let gallerySessionId = null;
+	let gallerySessionId: string | null = null;
 
 	onMount(() => {
 		const params = new URLSearchParams(window.location.search);

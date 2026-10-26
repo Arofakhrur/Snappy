@@ -1,13 +1,13 @@
-<script>
+<script lang="ts">
   /**
    * Lensa: tombol kosakata kios — bulatan bergaya kaca lensa kamera, cincin
    * etch konsentris, dan saat kursor menyentuh: label menurun, ikon kamera
    * masuk, warna kaca berbalik nilai (gelap↔terang dalam temanya).
    * inflow = dipakai dalam alur tata letak biasa (bukan menindih logotype).
    */
-  export let label = '';
-  export let ariaLabel = label;
-  export let inflow = false;
+  export let label: string = '';
+  export let ariaLabel: string = label;
+  export let inflow: boolean = false;
 </script>
 
 <button

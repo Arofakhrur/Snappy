@@ -1,23 +1,21 @@
-<script>
+<script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { session, addPhoto, finishCapture, setRetakeIndex, goTo, setCameraError } from '#lib/stores/session.js';
-  import { startCamera, stopCamera, switchCamera, attachStream, getCameraErrorMessage, hasMultipleCameras } from '#lib/utils/camera.js';
-  import { captureFrame, runCountdown } from '#lib/utils/capture.js';
+  import { session, addPhoto, finishCapture, setRetakeIndex, goTo, setCameraError } from '#lib/stores/session';
+  import { startCamera, stopCamera, switchCamera, attachStream, getCameraErrorMessage, hasMultipleCameras } from '#lib/utils/camera';
+  import { captureFrame, runCountdown, type CountdownHandle } from '#lib/utils/capture';
   import PermissionIllus from '#lib/components/illustrations/PermissionIllus.svelte';
 
-  /** @type {HTMLVideoElement} */
-  let videoEl;
+  let videoEl: HTMLVideoElement | undefined;
 
-  /** @type {MediaStream|null} */
-  let stream = null;
+  let stream: MediaStream | null = null;
 
   let isLoading = true;
-  let errorType = null; // 'permission_denied' | 'no_camera' | 'camera_busy' | 'unknown' | null
-  let countdownValue = null; // null | 0..3
+  let errorType: string | null = null; // 'permission_denied' | 'no_camera' | 'camera_busy' | 'unknown' | null
+  let countdownValue: number | null = null; // null | 0..3
   let isSessionActive = false;
   let isFlashing = false;
   let canSwitch = false;
-  let captureCancel = null;
+  let captureCancel: CountdownHandle | null = null;
   let currentPhotoNum = 0;
 
   // Read from session store
@@ -26,7 +24,7 @@
 
   const isSingleRetake = $session.retakeIndex !== null;
 
-  async function initCamera() {
+  async function initCamera(): Promise<void> {
     isLoading = true;
     errorType = null;
     try {
@@ -48,7 +46,7 @@
     }
   }
 
-  async function handleSwitchCamera() {
+  async function handleSwitchCamera(): Promise<void> {
     isLoading = true;
     try {
       stream = await switchCamera();
@@ -61,7 +59,7 @@
     }
   }
 
-  async function startCaptureSession() {
+  async function startCaptureSession(): Promise<void> {
     if (isSessionActive) return;
 
     // When starting a full session (not single retake), completely wipe previous photos
@@ -79,7 +77,7 @@
 
     for (let i = 0; i < totalShots; i++) {
       // Wait for countdown
-      await new Promise((resolve) => {
+      await new Promise<void>((resolve) => {
         captureCancel = runCountdown({
           from: 3,
           onTick: (n) => { countdownValue = n; },
@@ -121,7 +119,7 @@
     }
   }
 
-  async function retryPermission() {
+  async function retryPermission(): Promise<void> {
     await initCamera();
   }
 
@@ -273,7 +271,7 @@
     {#if !isSessionActive && !isLoading}
       <p class="session-hint" role="status">
         {#if isSingleRetake}
-          Tap the button to retake photo {retakeIndex + 1}
+          Tap the button to retake photo {(retakeIndex ?? 0) + 1}
         {:else}
           Tap the button to start — {photoCount} photos with countdown
         {/if}

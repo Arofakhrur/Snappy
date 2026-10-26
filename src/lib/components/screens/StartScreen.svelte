@@ -1,5 +1,5 @@
-<script>
-  import { goTo, session } from '#lib/stores/session.js';
+<script lang="ts">
+  import { goTo, session } from '#lib/stores/session';
   import StripBands from '#lib/components/kiosk/StripBands.svelte';
   import ThemeToggle from '#lib/components/kiosk/ThemeToggle.svelte';
   import LensButton from '#lib/components/kiosk/LensButton.svelte';
@@ -7,7 +7,7 @@
   $: theme = $session.theme;
 
   // MULAI → halaman pemilihan strip (jumlah foto & jenis), bukan langsung kamera
-  function handleStart() {
+  function handleStart(): void {
     goTo('strip');
   }
 </script>

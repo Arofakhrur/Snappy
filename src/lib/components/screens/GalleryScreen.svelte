@@ -1,30 +1,30 @@
-<script>
+<script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { loadGallerySession, buildAnimatedGif } from '#lib/utils/gallery.js';
-  import { playGrekSound } from '#lib/utils/audio.js';
-  import { goTo } from '#lib/stores/session.js';
-  import { PRODUK } from '#lib/utils/canvas.js';
+  import { loadGallerySession, buildAnimatedGif } from '#lib/utils/gallery';
+  import { playGrekSound } from '#lib/utils/audio';
+  import { goTo } from '#lib/stores/session';
+  import { PRODUK } from '#lib/utils/canvas';
+  import type { GallerySession } from '#lib/types';
 
-  export let sessionId = '';
+  export let sessionId: string = '';
 
-  /** @type {import('#lib/utils/gallery.js').GallerySession|null} */
-  let galleryData = null;
+  let galleryData: GallerySession | null = null;
   let loading = true;
-  let error = null;
+  let error: string | null = null;
 
   // Deck state
   let activeCardIndex = 0;
 
   // GIF file state
-  let gifDataUrl = null;
+  let gifDataUrl: string | null = null;
   let gifGenerating = false;
-  let gifError = null;
+  let gifError: string | null = null;
 
   // Live Looping Frame Player state (for GIF card)
   let currentLoopFrame = 0;
   let isLoopPlaying = true;
   let loopIntervalMs = 1000; // 1 second per frame (pindah-pindah frame)
-  let loopTimer = null;
+  let loopTimer: ReturnType<typeof setInterval> | null = null;
 
   let downloadingAll = false;
 
@@ -34,10 +34,22 @@
   let pointerDeltaX = 0;
   let isDragging = false;
 
+  interface GalleryCard {
+    id: string;
+    type: 'strip' | 'photo' | 'gif';
+    badge: string;
+    title: string;
+    subtitle: string;
+    imageUrl: string;
+    downloadAction: () => void;
+    btnLabel: string;
+    photoIndex?: number;
+  }
+
   /** Produk strip sesuai jumlah foto galeri (ukuran cetak nyata). */
   $: produk = galleryData ? (PRODUK[galleryData.photos.length] || PRODUK[4]) : PRODUK[4];
 
-  $: cardItems = galleryData ? [
+  $: cardItems = galleryData ? ([
     {
       id: 'strip',
       type: 'strip',
@@ -48,10 +60,10 @@
       downloadAction: downloadStrip,
       btnLabel: 'Unduh Strip 4R',
     },
-    ...galleryData.photos.map((photo, i) => ({
+    ...galleryData.photos.map((photo: string, i: number, semua: string[]): GalleryCard => ({
       id: `photo-${i}`,
       type: 'photo',
-      badge: `FOTO #${i + 1} DARI ${galleryData.photos.length}`,
+      badge: `FOTO #${i + 1} DARI ${semua.length}`,
       title: `Foto Jepretan #${i + 1}`,
       subtitle: 'Foto asli kamera resolusi tinggi',
       imageUrl: photo,
@@ -65,27 +77,29 @@
       badge: 'ANIMASI LOOPING',
       title: 'Animasi Looping (GIF)',
       subtitle: 'Berpindah frame otomatis (minimal 5 detik)',
+      imageUrl: '',
       downloadAction: downloadGif,
       btnLabel: 'Unduh File GIF',
     }
-  ] : [];
+  ] as GalleryCard[]) : ([] as GalleryCard[]);
 
-  function startLoopTimer() {
+  function startLoopTimer(): void {
     stopLoopTimer();
     if (!isLoopPlaying || !galleryData || !galleryData.photos || galleryData.photos.length === 0) return;
+    const photos = galleryData.photos;
     loopTimer = setInterval(() => {
-      currentLoopFrame = (currentLoopFrame + 1) % galleryData.photos.length;
+      currentLoopFrame = (currentLoopFrame + 1) % photos.length;
     }, loopIntervalMs);
   }
 
-  function stopLoopTimer() {
+  function stopLoopTimer(): void {
     if (loopTimer) {
       clearInterval(loopTimer);
       loopTimer = null;
     }
   }
 
-  function togglePlayPause() {
+  function togglePlayPause(): void {
     isLoopPlaying = !isLoopPlaying;
     if (isLoopPlaying) {
       startLoopTimer();
@@ -94,14 +108,14 @@
     }
   }
 
-  function setLoopSpeed(ms) {
+  function setLoopSpeed(ms: number): void {
     loopIntervalMs = ms;
     if (isLoopPlaying) {
       startLoopTimer();
     }
   }
 
-  function jumpToFrame(index) {
+  function jumpToFrame(index: number): void {
     currentLoopFrame = index;
     if (isLoopPlaying) {
       startLoopTimer();
@@ -110,7 +124,7 @@
 
   // ─── Deck Navigation & Sound ────────────────────────────────────────────────
 
-  function getCircularDiff(index, activeIndex, total) {
+  function getCircularDiff(index: number, activeIndex: number, total: number): number {
     if (total <= 1) return 0;
     let diff = (index - activeIndex) % total;
     if (diff > total / 2) {
@@ -121,19 +135,19 @@
     return diff;
   }
 
-  function goToCard(index) {
+  function goToCard(index: number): void {
     if (index === activeCardIndex || index < 0 || index >= cardItems.length) return;
     activeCardIndex = index;
     playGrekSound();
   }
 
-  function nextCard() {
+  function nextCard(): void {
     if (!cardItems || cardItems.length <= 1) return;
     activeCardIndex = (activeCardIndex + 1) % cardItems.length;
     playGrekSound();
   }
 
-  function prevCard() {
+  function prevCard(): void {
     if (!cardItems || cardItems.length <= 1) return;
     activeCardIndex = (activeCardIndex - 1 + cardItems.length) % cardItems.length;
     playGrekSound();
@@ -141,14 +155,16 @@
 
   // ─── Swipe & Drag Handlers ──────────────────────────────────────────────────
 
-  function handlePointerDown(e) {
+  type PointerOrTouchEvent = PointerEvent & { touches?: TouchList };
+
+  function handlePointerDown(e: PointerOrTouchEvent): void {
     pointerStartX = e.clientX ?? (e.touches && e.touches[0].clientX) ?? 0;
     pointerStartY = e.clientY ?? (e.touches && e.touches[0].clientY) ?? 0;
     pointerDeltaX = 0;
     isDragging = true;
   }
 
-  function handlePointerMove(e) {
+  function handlePointerMove(e: PointerOrTouchEvent): void {
     if (!isDragging) return;
     const currentX = e.clientX ?? (e.touches && e.touches[0].clientX) ?? 0;
     const currentY = e.clientY ?? (e.touches && e.touches[0].clientY) ?? 0;
@@ -161,7 +177,7 @@
     }
   }
 
-  function handlePointerUp() {
+  function handlePointerUp(): void {
     if (!isDragging) return;
     isDragging = false;
     const threshold = 40; // minimum swipe distance
@@ -173,7 +189,7 @@
     pointerDeltaX = 0;
   }
 
-  function handleKeyDown(e) {
+  function handleKeyDown(e: KeyboardEvent): void {
     if (e.key === 'ArrowRight') {
       nextCard();
     } else if (e.key === 'ArrowLeft') {
@@ -219,7 +235,7 @@
     stopLoopTimer();
   });
 
-  async function generateGif() {
+  async function generateGif(): Promise<void> {
     if (!galleryData || gifGenerating) return;
     gifGenerating = true;
     gifError = null;
@@ -236,7 +252,7 @@
     gifGenerating = false;
   }
 
-  function downloadDataUrl(dataUrl, filename) {
+  function downloadDataUrl(dataUrl: string, filename: string): void {
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = filename;
@@ -245,23 +261,23 @@
     document.body.removeChild(a);
   }
 
-  function downloadPhoto(url, index) {
+  function downloadPhoto(url: string, index: number): void {
     downloadDataUrl(url, `distudio-photo-${index + 1}.png`);
   }
 
-  function downloadStrip() {
+  function downloadStrip(): void {
     if (galleryData?.stripDataUrl) {
       downloadDataUrl(galleryData.stripDataUrl, 'distudio-photo-strip.png');
     }
   }
 
-  function downloadGif() {
+  function downloadGif(): void {
     if (gifDataUrl) {
       downloadDataUrl(gifDataUrl, 'distudio-animated.gif');
     }
   }
 
-  async function downloadAll() {
+  async function downloadAll(): Promise<void> {
     if (!galleryData || downloadingAll) return;
     downloadingAll = true;
 
@@ -283,7 +299,7 @@
     downloadingAll = false;
   }
 
-  function formatDate(iso) {
+  function formatDate(iso: string): string {
     if (!iso) return '';
     return new Date(iso).toLocaleString('id-ID', {
       day: 'numeric', month: 'long', year: 'numeric',

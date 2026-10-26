@@ -1,5 +1,5 @@
-<script>
-  export let size = '200';
+<script lang="ts">
+  export let size: string = '200';
 </script>
 
 <!-- Permission denied illustration — camera with lock overlay -->

@@ -1,8 +1,8 @@
-<script>
+<script lang="ts">
 	import '../app.css';
+	import type { Snippet } from 'svelte';
 
-	/** @type {{children: import('svelte').Snippet}} */
-	let { children } = $props();
+	let { children }: { children: Snippet } = $props();
 </script>
 
 <svelte:head>
