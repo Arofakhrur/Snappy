@@ -392,6 +392,9 @@
     top: 18px;
     left: 18px;
     z-index: 3;
+    /* Target sentuh minimum 44px (kios layar sentuh) */
+    min-height: 44px;
+    min-width: 44px;
     display: inline-flex;
     align-items: center;
     gap: 8px;
