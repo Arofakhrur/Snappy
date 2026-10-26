@@ -1,23 +1,33 @@
-<script>
+<script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { session, setCustomTemplate } from '#lib/stores/session.js';
-  import { saveCustomTemplate, exportTemplateFile, BUILTIN_STICKERS } from '#lib/utils/customTemplateStorage.js';
-  import { renderSingleStrip, loadImage } from '#lib/utils/canvas.js';
+  import { session, setCustomTemplate } from '#lib/stores/session';
+  import { saveCustomTemplate, exportTemplateFile, BUILTIN_STICKERS } from '#lib/utils/customTemplateStorage';
+  import { renderSingleStrip, loadImage } from '#lib/utils/canvas';
+  import type { CustomSlot, CustomTemplate, DecorativeLayer, SlotPoint, BuiltinSticker } from '#lib/types';
 
-  export let initialTemplate = null;
-  export let onClose = () => {};
-  export let onSaveAndApply = (template) => {};
+  export let initialTemplate: CustomTemplate | null = null;
+  export let onClose: () => void = () => {};
+  export let onSaveAndApply: (template: CustomTemplate) => void = () => {};
+
+  /** Nama berkas panduan SVG per jumlah foto (ukuran nyata PRODUK). */
+  const NAMA_BERKAS: Record<number, string> = {
+    1: 'bigshot',
+    2: 'twoup',
+    3: 'threeup',
+    4: 'twobytwo',
+    5: 'fiveup',
+    6: 'sixup',
+  };
 
   // Template editable state
   let templateId = initialTemplate ? initialTemplate.id : `custom-${Date.now()}`;
   let templateName = initialTemplate ? initialTemplate.name : 'My Custom Strip';
   let backgroundColor = initialTemplate ? initialTemplate.backgroundColor || '#FFFFFF' : '#FFFFFF';
-  let artworkLayer = initialTemplate ? initialTemplate.artworkLayer || 'overlay' : 'overlay';
+  let artworkLayer: 'overlay' | 'underlay' = initialTemplate ? initialTemplate.artworkLayer || 'overlay' : 'overlay';
   let artworkDataUrl = initialTemplate ? initialTemplate.artworkDataUrl || '' : '';
 
-  /** @type {Array<import('#lib/utils/customTemplateStorage.js').CustomSlot>} */
-  let slots = initialTemplate && initialTemplate.slots
-    ? JSON.parse(JSON.stringify(initialTemplate.slots))
+  let slots: CustomSlot[] = initialTemplate && initialTemplate.slots
+    ? JSON.parse(JSON.stringify(initialTemplate.slots)) as CustomSlot[]
     : [
         {
           id: 'slot-1',
@@ -63,38 +73,38 @@
         }
       ];
 
-  /** @type {Array<import('#lib/utils/customTemplateStorage.js').DecorativeLayer>} */
-  let overlays = initialTemplate && initialTemplate.overlays
-    ? JSON.parse(JSON.stringify(initialTemplate.overlays))
+  let overlays: DecorativeLayer[] = initialTemplate && initialTemplate.overlays
+    ? JSON.parse(JSON.stringify(initialTemplate.overlays)) as DecorativeLayer[]
     : [];
 
   // Editor interaction state
-  let selectedSlotId = slots.length > 0 ? slots[0].id : null;
-  let selectedOverlayId = overlays.length > 0 ? overlays[0].id : null;
-  let selectedKind = 'slot'; // 'slot' | 'overlay'
-  let activeTab = 'slots'; // 'slots' | 'overlays' | 'artwork' | 'assignment' | 'guides'
-  let viewMode = 'wireframe'; // 'wireframe' | 'live'
+  let selectedSlotId: string | null = slots.length > 0 ? slots[0].id : null;
+  let selectedOverlayId: string | null = overlays.length > 0 ? overlays[0].id : null;
+  let selectedKind: 'slot' | 'overlay' = 'slot'; // 'slot' | 'overlay'
+  let activeTab: 'slots' | 'overlays' | 'artwork' | 'assignment' | 'guides' = 'slots'; // 'slots' | 'overlays' | 'artwork' | 'assignment' | 'guides'
+  let viewMode: 'wireframe' | 'live' = 'wireframe'; // 'wireframe' | 'live'
   let editorZoom = 1.0; // 0.8, 1.0, 1.25, 1.5
 
   // Dragging state
-  let draggingMode = null; // 'slot-move' | 'slot-resize' | 'slot-point' | 'overlay-move' | 'overlay-resize' | 'overlay-rotate'
-  let dragSlotId = null;
-  let dragOverlayId = null;
-  let dragPointIdx = null;
-  let dragResizeHandle = null; // 'se' | 'sw' | 'ne' | 'nw'
+  type DragMode = 'slot-move' | 'slot-resize' | 'slot-point' | 'overlay-move' | 'overlay-resize' | 'overlay-rotate';
+  type ResizeHandle = 'se' | 'sw' | 'ne' | 'nw';
+  let draggingMode: DragMode | null = null; // 'slot-move' | 'slot-resize' | 'slot-point' | 'overlay-move' | 'overlay-resize' | 'overlay-rotate'
+  let dragSlotId: string | null = null;
+  let dragOverlayId: string | null = null;
+  let dragPointIdx: number | null = null;
+  let dragResizeHandle: ResizeHandle | null = null; // 'se' | 'sw' | 'ne' | 'nw'
   let dragStartX = 0;
   let dragStartY = 0;
-  let dragStartSlot = null;
-  let dragStartOverlay = null;
+  let dragStartSlot: CustomSlot | null = null;
+  let dragStartOverlay: DecorativeLayer | null = null;
 
   // Validation / notices
-  let artworkWarning = null;
-  let artworkInfo = null;
+  let artworkWarning: string | null = null;
+  let artworkInfo: string | null = null;
   let saveFeedback = '';
 
   // Canvas ref for live composite preview
-  /** @type {HTMLCanvasElement} */
-  let liveCanvas;
+  let liveCanvas: HTMLCanvasElement;
 
   $: activeSlot = slots.find((s) => s.id === selectedSlotId) || slots[0] || null;
   $: activeOverlay = overlays.find((o) => o.id === selectedOverlayId) || overlays[0] || null;
@@ -105,7 +115,7 @@
     drawLivePreview();
   }
 
-  async function drawLivePreview() {
+  async function drawLivePreview(): Promise<void> {
     if (!liveCanvas) return;
     const ctx = liveCanvas.getContext('2d');
     if (!ctx) return;
@@ -115,7 +125,7 @@
       capturedPhotos.map((url) => (url ? loadImage(url).catch(() => null) : Promise.resolve(null)))
     );
 
-    const tmplObj = {
+    const tmplObj: CustomTemplate = {
       id: templateId,
       name: templateName,
       isCustom: true,
@@ -130,8 +140,9 @@
   }
 
   // File import for custom artwork frame
-  function handleArtworkUpload(event) {
-    const file = event.target.files && event.target.files[0];
+  function handleArtworkUpload(event: Event): void {
+    const targetEl = event.target as HTMLInputElement | null;
+    const file = (targetEl?.files && targetEl.files[0]) || null;
     if (!file) return;
 
     artworkWarning = null;
@@ -144,7 +155,7 @@
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const dataUrl = e.target.result;
+      const dataUrl = (e.target as FileReader | null)?.result as string;
       const img = new Image();
       img.onload = () => {
         const aspect = img.width / img.height;
@@ -164,7 +175,7 @@
     reader.readAsDataURL(file);
   }
 
-  function removeArtwork() {
+  function removeArtwork(): void {
     artworkDataUrl = '';
     artworkWarning = null;
     artworkInfo = null;
@@ -174,9 +185,9 @@
   // ==========================================
   // Slot Management
   // ==========================================
-  function addRectSlot() {
+  function addRectSlot(): void {
     const newIdx = slots.length + 1;
-    const newSlot = {
+    const newSlot: CustomSlot = {
       id: `slot-${Date.now()}`,
       name: `Slot ${newIdx}`,
       type: 'rect',
@@ -195,9 +206,9 @@
     selectedKind = 'slot';
   }
 
-  function addPolygonSlot(preset = 'slanted') {
+  function addPolygonSlot(preset: string = 'slanted'): void {
     const newIdx = slots.length + 1;
-    let points = [];
+    let points: SlotPoint[] = [];
 
     if (preset === 'slanted') {
       points = [
@@ -236,7 +247,7 @@
     const minY = Math.min(...points.map((p) => p.y));
     const maxY = Math.max(...points.map((p) => p.y));
 
-    const newSlot = {
+    const newSlot: CustomSlot = {
       id: `slot-${Date.now()}`,
       name: `Irregular Slot ${newIdx}`,
       type: 'polygon',
@@ -256,9 +267,9 @@
     selectedKind = 'slot';
   }
 
-  function addCircleSlot() {
+  function addCircleSlot(): void {
     const newIdx = slots.length + 1;
-    const newSlot = {
+    const newSlot: CustomSlot = {
       id: `slot-${Date.now()}`,
       name: `Circle Slot ${newIdx}`,
       type: 'circle',
@@ -276,7 +287,7 @@
     selectedKind = 'slot';
   }
 
-  function deleteSlot(id) {
+  function deleteSlot(id: string): void {
     if (slots.length <= 1) return;
     slots = slots.filter((s) => s.id !== id);
     if (selectedSlotId === id) {
@@ -284,7 +295,7 @@
     }
   }
 
-  function moveSlotOrder(index, direction) {
+  function moveSlotOrder(index: number, direction: number): void {
     const targetIdx = index + direction;
     if (targetIdx < 0 || targetIdx >= slots.length) return;
     const temp = slots[index];
@@ -296,9 +307,9 @@
   // ==========================================
   // Decorative Overlay Layers Management
   // ==========================================
-  function addBuiltinSticker(sticker) {
+  function addBuiltinSticker(sticker: BuiltinSticker): void {
     const newIdx = overlays.length + 1;
-    const newOverlay = {
+    const newOverlay: DecorativeLayer = {
       id: `overlay-${Date.now()}`,
       name: sticker.name,
       type: sticker.type || 'sticker',
@@ -323,8 +334,9 @@
     if (viewMode === 'live') drawLivePreview();
   }
 
-  function handleCustomOverlayUpload(event) {
-    const file = event.target.files && event.target.files[0];
+  function handleCustomOverlayUpload(event: Event): void {
+    const targetEl = event.target as HTMLInputElement | null;
+    const file = (targetEl?.files && targetEl.files[0]) || null;
     if (!file) return;
 
     if (!file.type.includes('image/png') && !file.type.includes('image/svg')) {
@@ -334,14 +346,14 @@
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const src = e.target.result;
+      const src = (e.target as FileReader | null)?.result as string;
       const img = new Image();
       img.onload = () => {
         const aspect = img.width / img.height;
         const defaultW = 0.35;
         const defaultH = defaultW / aspect;
 
-        const newOverlay = {
+        const newOverlay: DecorativeLayer = {
           id: `overlay-${Date.now()}`,
           name: file.name.replace(/\.[^/.]+$/, '').slice(0, 20) || 'Custom Layer',
           type: 'image',
@@ -370,7 +382,7 @@
     reader.readAsDataURL(file);
   }
 
-  function deleteOverlay(id) {
+  function deleteOverlay(id: string): void {
     overlays = overlays.filter((o) => o.id !== id);
     if (selectedOverlayId === id) {
       selectedOverlayId = overlays[0]?.id || null;
@@ -378,10 +390,10 @@
     if (viewMode === 'live') drawLivePreview();
   }
 
-  function duplicateOverlay(id) {
+  function duplicateOverlay(id: string): void {
     const target = overlays.find((o) => o.id === id);
     if (!target) return;
-    const copy = {
+    const copy: DecorativeLayer = {
       ...JSON.parse(JSON.stringify(target)),
       id: `overlay-${Date.now()}`,
       name: `${target.name} (Copy)`,
@@ -395,28 +407,28 @@
     if (viewMode === 'live') drawLivePreview();
   }
 
-  function toggleOverlayLock(id) {
+  function toggleOverlayLock(id: string): void {
     overlays = overlays.map((o) => (o.id === id ? { ...o, locked: !o.locked } : o));
   }
 
-  function toggleOverlayHide(id) {
+  function toggleOverlayHide(id: string): void {
     overlays = overlays.map((o) => (o.id === id ? { ...o, hidden: !o.hidden } : o));
     if (viewMode === 'live') drawLivePreview();
   }
 
-  function bringToFront(id) {
+  function bringToFront(id: string): void {
     const maxZ = Math.max(...overlays.map((o) => o.zIndex || 0), 0);
     overlays = overlays.map((o) => (o.id === id ? { ...o, zIndex: maxZ + 1 } : o));
     if (viewMode === 'live') drawLivePreview();
   }
 
-  function sendToBack(id) {
+  function sendToBack(id: string): void {
     const minZ = Math.min(...overlays.map((o) => o.zIndex || 0), 0);
     overlays = overlays.map((o) => (o.id === id ? { ...o, zIndex: minZ - 1 } : o));
     if (viewMode === 'live') drawLivePreview();
   }
 
-  function moveOverlayOrder(index, direction) {
+  function moveOverlayOrder(index: number, direction: number): void {
     const targetIdx = index + direction;
     if (targetIdx < 0 || targetIdx >= overlays.length) return;
     const temp = overlays[index];
@@ -430,7 +442,7 @@
   // ==========================================
   // Pointer Drag & Transform Handlers
   // ==========================================
-  function onSlotPointerDown(e, mode, slotId, pointIdx = null, handle = null) {
+  function onSlotPointerDown(e: PointerEvent, mode: DragMode, slotId: string, pointIdx: number | null = null, handle: ResizeHandle | null = null): void {
     e.stopPropagation();
     e.preventDefault();
 
@@ -450,7 +462,7 @@
     window.addEventListener('pointerup', onPointerUp);
   }
 
-  function onOverlayPointerDown(e, mode, overlayId, handle = null) {
+  function onOverlayPointerDown(e: PointerEvent, mode: DragMode, overlayId: string, handle: ResizeHandle | null = null): void {
     e.stopPropagation();
     e.preventDefault();
 
@@ -472,7 +484,7 @@
     window.addEventListener('pointerup', onPointerUp);
   }
 
-  function onPointerMove(e) {
+  function onPointerMove(e: PointerEvent): void {
     if (!draggingMode) return;
 
     // Viewport dimensions (300 x 900 base visual size)
@@ -482,20 +494,26 @@
     const deltaX = (e.clientX - dragStartX) / viewW;
     const deltaY = (e.clientY - dragStartY) / viewH;
 
+    // Snapshot the drag state: the map callbacks below can't rely on
+    // control-flow narrowing of these mutable `let` fields.
+    const mode: DragMode = draggingMode;
+    const startSlot = dragStartSlot;
+    const startOverlay = dragStartOverlay;
+
     // A. Slot Transformations
-    if (dragStartSlot && (draggingMode === 'slot-move' || draggingMode === 'slot-resize' || draggingMode === 'slot-point')) {
+    if (startSlot && (mode === 'slot-move' || mode === 'slot-resize' || mode === 'slot-point')) {
       slots = slots.map((s) => {
         if (s.id !== dragSlotId) return s;
 
-        if (draggingMode === 'slot-move') {
-          const newX = Math.max(0, Math.min(1 - s.width, dragStartSlot.x + deltaX));
-          const newY = Math.max(0, Math.min(1 - s.height, dragStartSlot.y + deltaY));
+        if (mode === 'slot-move') {
+          const newX = Math.max(0, Math.min(1 - s.width, startSlot.x + deltaX));
+          const newY = Math.max(0, Math.min(1 - s.height, startSlot.y + deltaY));
 
           let updatedPoints = s.points;
-          if (s.type === 'polygon' && dragStartSlot.points) {
-            const shiftX = newX - dragStartSlot.x;
-            const shiftY = newY - dragStartSlot.y;
-            updatedPoints = dragStartSlot.points.map((pt) => ({
+          if (s.type === 'polygon' && startSlot.points) {
+            const shiftX = newX - startSlot.x;
+            const shiftY = newY - startSlot.y;
+            updatedPoints = startSlot.points.map((pt) => ({
               x: Math.max(0, Math.min(1, pt.x + shiftX)),
               y: Math.max(0, Math.min(1, pt.y + shiftY)),
             }));
@@ -504,23 +522,23 @@
           return { ...s, x: newX, y: newY, points: updatedPoints };
         }
 
-        if (draggingMode === 'slot-resize') {
-          let newX = dragStartSlot.x;
-          let newY = dragStartSlot.y;
-          let newW = dragStartSlot.width;
-          let newH = dragStartSlot.height;
+        if (mode === 'slot-resize') {
+          let newX = startSlot.x;
+          let newY = startSlot.y;
+          let newW = startSlot.width;
+          let newH = startSlot.height;
 
           if (dragResizeHandle === 'se') {
-            newW = Math.max(0.1, Math.min(1 - newX, dragStartSlot.width + deltaX));
-            newH = Math.max(0.06, Math.min(1 - newY, dragStartSlot.height + deltaY));
+            newW = Math.max(0.1, Math.min(1 - newX, startSlot.width + deltaX));
+            newH = Math.max(0.06, Math.min(1 - newY, startSlot.height + deltaY));
           }
 
           return { ...s, x: newX, y: newY, width: newW, height: newH };
         }
 
-        if (draggingMode === 'slot-point' && s.type === 'polygon' && dragPointIdx !== null) {
+        if (mode === 'slot-point' && s.type === 'polygon' && dragPointIdx !== null) {
           const points = [...(s.points || [])];
-          const origPt = dragStartSlot.points[dragPointIdx];
+          const origPt = startSlot.points?.[dragPointIdx];
           if (origPt) {
             points[dragPointIdx] = {
               x: Math.max(0, Math.min(1, origPt.x + deltaX)),
@@ -540,32 +558,32 @@
     }
 
     // B. Overlay Transformations
-    if (dragStartOverlay && (draggingMode === 'overlay-move' || draggingMode === 'overlay-resize' || draggingMode === 'overlay-rotate')) {
+    if (startOverlay && (mode === 'overlay-move' || mode === 'overlay-resize' || mode === 'overlay-rotate')) {
       overlays = overlays.map((o) => {
         if (o.id !== dragOverlayId) return o;
 
-        if (draggingMode === 'overlay-move') {
-          const newX = Math.max(-0.2, Math.min(1.0, dragStartOverlay.x + deltaX));
-          const newY = Math.max(-0.2, Math.min(1.0, dragStartOverlay.y + deltaY));
+        if (mode === 'overlay-move') {
+          const newX = Math.max(-0.2, Math.min(1.0, startOverlay.x + deltaX));
+          const newY = Math.max(-0.2, Math.min(1.0, startOverlay.y + deltaY));
           return { ...o, x: newX, y: newY };
         }
 
-        if (draggingMode === 'overlay-resize') {
-          let newW = Math.max(0.05, Math.min(1.2, dragStartOverlay.width + deltaX));
-          let newH = dragStartOverlay.height;
+        if (mode === 'overlay-resize') {
+          let newW = Math.max(0.05, Math.min(1.2, startOverlay.width + deltaX));
+          let newH = startOverlay.height;
           if (o.aspectRatioLocked && o.aspectRatio) {
             newH = newW / o.aspectRatio;
           } else {
-            newH = Math.max(0.02, Math.min(1.0, dragStartOverlay.height + deltaY));
+            newH = Math.max(0.02, Math.min(1.0, startOverlay.height + deltaY));
           }
           return { ...o, width: newW, height: newH };
         }
 
-        if (draggingMode === 'overlay-rotate') {
+        if (mode === 'overlay-rotate') {
           // Angle from overlay center to cursor
-          const cx = (dragStartOverlay.x + dragStartOverlay.width / 2) * viewW;
-          const cy = (dragStartOverlay.y + dragStartOverlay.height / 2) * viewH;
-          const rect = liveCanvas ? liveCanvas.getBoundingClientRect() : e.target.getBoundingClientRect();
+          const cx = (startOverlay.x + startOverlay.width / 2) * viewW;
+          const cy = (startOverlay.y + startOverlay.height / 2) * viewH;
+          const rect = liveCanvas ? liveCanvas.getBoundingClientRect() : (e.target as Element).getBoundingClientRect();
           const curX = e.clientX - rect.left;
           const curY = e.clientY - rect.top;
           const angleRad = Math.atan2(curY - cy, curX - cx);
@@ -579,7 +597,7 @@
     }
   }
 
-  function onPointerUp() {
+  function onPointerUp(): void {
     draggingMode = null;
     dragSlotId = null;
     dragOverlayId = null;
@@ -595,8 +613,8 @@
   }
 
   // Save template action
-  async function handleSave() {
-    const templateData = {
+  async function handleSave(): Promise<void> {
+    const templateData: CustomTemplate = {
       id: templateId,
       name: templateName.trim() || 'Custom Photo Strip',
       isCustom: true,
@@ -621,8 +639,8 @@
     onSaveAndApply(saved);
   }
 
-  function handleExportPackage() {
-    const templateData = {
+  function handleExportPackage(): void {
+    const templateData: CustomTemplate = {
       id: templateId,
       name: templateName.trim() || 'Custom Photo Strip',
       isCustom: true,
@@ -1510,15 +1528,18 @@
                   <div class="guide-download-card">
                     <div class="guide-card-icon">📏</div>
                     <div class="guide-card-info">
-                      <h4>2 × 6″ Individual Strip (SVG)</h4>
-                      <p>600 × 1800 px @ 300 DPI. Includes safe margins and 4 suggested photo slots on a separate guide layer.</p>
-                      <a
-                        href="/templates/strip-template-2x6.svg"
-                        download="distudio-strip-template-2x6.svg"
-                        class="btn btn-secondary btn-sm"
-                      >
-                        Download SVG Strip Guide
-                      </a>
+                      <h4>Individual Product Guides — Slot Layouts (SVG)</h4>
+                      <p>Satu berkas per jumlah foto (1–6), ukuran cetak nyata: Big shot 13×7 cm, Two up 15×5 cm (2 salinan di 4R), Three up 15×6 cm, serta kertas 10×15 cm untuk 4–6 foto. Margin aman + susunan slot di lapisan panduan terpisah.</p>
+                      <div class="guide-slot-row" role="group" aria-label="Pilih layout untuk diunduh">
+                        {#each [1, 2, 3, 4, 5, 6] as n (n)}
+                          <a
+                            href={`/templates/strip-template-${NAMA_BERKAS[n]}.svg`}
+                            download={`distudio-strip-${NAMA_BERKAS[n]}.svg`}
+                            class="btn btn-secondary btn-xs"
+                            title={`Layout ${n} foto`}
+                          >{n}</a>
+                        {/each}
+                      </div>
                     </div>
                   </div>
 
@@ -2232,6 +2253,13 @@
     background: var(--color-bg);
     border-radius: var(--radius-md);
     border: 1.5px solid var(--color-border);
+  }
+
+  .guide-slot-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
   }
 
   .guide-card-icon {

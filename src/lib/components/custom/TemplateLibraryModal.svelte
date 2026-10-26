@@ -1,59 +1,70 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { session, setCustomTemplate } from '#lib/stores/session.js';
+  import { session, setCustomTemplate } from '#lib/stores/session';
   import {
     getAllCustomTemplates,
     deleteCustomTemplate,
     duplicateCustomTemplate,
     exportTemplateFile,
     importTemplateFile
-  } from '#lib/utils/customTemplateStorage.js';
+  } from '#lib/utils/customTemplateStorage';
+  import type { CustomTemplate } from '#lib/types';
 
-  export let onClose = () => {};
-  export let onSelectTemplate = (template) => {};
-  export let onEditTemplate = (template) => {};
-  export let onCreateNew = () => {};
+  export let onClose: () => void = () => {};
+  export let onSelectTemplate: (template: CustomTemplate) => void = () => {};
+  export let onEditTemplate: (template: CustomTemplate) => void = () => {};
+  export let onCreateNew: () => void = () => {};
 
-  /** @type {Array<import('#lib/utils/customTemplateStorage.js').CustomTemplate>} */
-  let templates = [];
+  let templates: CustomTemplate[] = [];
   let isLoading = true;
   let importError = '';
   let activeTemplateId = $session.selectedTemplate;
+
+  /** Nama berkas panduan SVG per jumlah foto (ukuran nyata PRODUK). */
+  const NAMA_BERKAS: Record<number, string> = {
+    1: 'bigshot',
+    2: 'twoup',
+    3: 'threeup',
+    4: 'twobytwo',
+    5: 'fiveup',
+    6: 'sixup',
+  };
 
   onMount(async () => {
     await loadTemplates();
   });
 
-  async function loadTemplates() {
+  async function loadTemplates(): Promise<void> {
     isLoading = true;
     try {
       templates = await getAllCustomTemplates();
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Failed to load custom templates:', e);
     } finally {
       isLoading = false;
     }
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(id: string): Promise<void> {
     if (!confirm('Are you sure you want to delete this custom template?')) return;
     await deleteCustomTemplate(id);
     await loadTemplates();
   }
 
-  async function handleDuplicate(id) {
+  async function handleDuplicate(id: string): Promise<void> {
     const copy = await duplicateCustomTemplate(id);
     if (copy) {
       await loadTemplates();
     }
   }
 
-  function handleExport(template) {
+  function handleExport(template: CustomTemplate): void {
     exportTemplateFile(template);
   }
 
-  async function handleImportFile(event) {
-    const file = event.target.files && event.target.files[0];
+  async function handleImportFile(event: Event): Promise<void> {
+    const targetEl = event.target as HTMLInputElement | null;
+    const file = (targetEl?.files && targetEl.files[0]) || null;
     if (!file) return;
 
     importError = '';
@@ -61,9 +72,9 @@
       const imported = await importTemplateFile(file);
       await loadTemplates();
       onSelectTemplate(imported);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to import template package:', err);
-      importError = 'Invalid template package file: ' + err.message;
+      importError = 'Invalid template package file: ' + (err instanceof Error ? err.message : String(err));
     }
   }
 </script>
@@ -107,14 +118,17 @@
           class="hidden-file-input"
         />
 
-        <a
-          href="/templates/strip-template-2x6.svg"
-          download="distudio-strip-template-2x6.svg"
-          class="btn btn-ghost btn-sm"
-          title="Download 2×6″ blank guide SVG"
-        >
-          📥 2×6″ Guide SVG
-        </a>
+        <div class="guide-variants" aria-label="Panduan layout per jumlah foto">
+          <span class="guide-variants-label">📥 Panduan ukuran:</span>
+          {#each [1, 2, 3, 4, 5, 6] as n (n)}
+            <a
+              href={`/templates/strip-template-${NAMA_BERKAS[n]}.svg`}
+              download={`distudio-strip-${NAMA_BERKAS[n]}.svg`}
+              class="btn btn-ghost btn-xs"
+              title={`Unduh panduan layout ${n} foto`}
+            >{n}</a>
+          {/each}
+        </div>
       </div>
     </div>
 
@@ -297,6 +311,19 @@
 
   .hidden-file-input {
     display: none;
+  }
+
+  .guide-variants {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .guide-variants-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-ink-light);
+    margin-right: 4px;
   }
 
   .import-label {

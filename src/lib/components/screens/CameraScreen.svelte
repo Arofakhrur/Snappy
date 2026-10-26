@@ -1,51 +1,51 @@
-<script>
+<script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { session, addPhoto, finishCapture, setRetakeIndex, goTo, setCameraError } from '#lib/stores/session.js';
-  import { startCamera, stopCamera, switchCamera, attachStream, getCameraErrorMessage, hasMultipleCameras } from '#lib/utils/camera.js';
-  import { captureFrame, runCountdown } from '#lib/utils/capture.js';
+  import { session, addPhoto, finishCapture, setRetakeIndex, goTo, setCameraError } from '#lib/stores/session';
+  import { startCamera, stopCamera, switchCamera, attachStream, getCameraErrorMessage, hasMultipleCameras } from '#lib/utils/camera';
+  import { captureFrame, runCountdown, type CountdownHandle } from '#lib/utils/capture';
   import PermissionIllus from '#lib/components/illustrations/PermissionIllus.svelte';
   import CrocShutter from '#lib/components/illustrations/CrocShutter.svelte';
 
-  /** @type {HTMLVideoElement} */
-  let videoEl;
+  let videoEl: HTMLVideoElement | undefined;
+  let viewportEl: HTMLElement | undefined;
+  let stream: MediaStream | null = null;
 
-  /** @type {HTMLElement} */
-  let viewportEl;
-
-  /** @type {MediaStream|null} */
-  let stream = null;
-
-  let isLoading       = true;
-  let errorType       = null;   // 'permission_denied' | 'no_camera' | 'camera_busy' | 'unknown' | null
-  let countdownValue  = null;   // null | 0..3
+  let isLoading = true;
+  let errorType: string | null = null; // 'permission_denied' | 'no_camera' | 'camera_busy' | 'unknown' | null
+  let countdownValue: number | null = null; // null | 0..3
   let isSessionActive = false;
-  let isFlashing      = false;
-  let canSwitch       = false;
-  let captureCancel   = null;
+  let isFlashing = false;
+  let canSwitch = false;
+  let captureCancel: CountdownHandle | null = null;
   let currentPhotoNum = 0;
 
   // ── Croc shutter animation progress (0 = open, 1 = snapped shut) ────
   let shutterProgress = 0;
-  let shutterAnimId   = null;
+  let shutterAnimId: number | null = null;
 
   // Read session store
-  $: photoCount    = $session.photoCount;
-  $: retakeIndex   = $session.retakeIndex;
+  $: photoCount = $session.photoCount;
+  $: retakeIndex = $session.retakeIndex;
   const isSingleRetake = $session.retakeIndex !== null;
 
   // ── Animation helpers ───────────────────────────────────────────────
-  function animateShutter(from, to, durationMs, easeFn = (t) => t) {
+  function animateShutter(
+    from: number,
+    to: number,
+    durationMs: number,
+    easeFn: (t: number) => number = (t) => t
+  ): Promise<void> {
     return new Promise((resolve) => {
       if (shutterAnimId) cancelAnimationFrame(shutterAnimId);
       const start = performance.now();
-      function step(now) {
+      function step(now: number) {
         const t = Math.min(1, (now - start) / durationMs);
         shutterProgress = from + (to - from) * easeFn(t);
         if (t < 1) {
           shutterAnimId = requestAnimationFrame(step);
         } else {
           shutterProgress = to;
-          shutterAnimId   = null;
+          shutterAnimId = null;
           resolve();
         }
       }
@@ -53,18 +53,18 @@
     });
   }
 
-  function easeInQuart(t) { return t * t * t * t; }
-  function easeOutBack(t) {
+  function easeInQuart(t: number): number { return t * t * t * t; }
+  function easeOutBack(t: number): number {
     const c1 = 1.4, c3 = c1 + 1;
     return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
   }
 
   // ── Camera initialization ───────────────────────────────────────────
-  async function initCamera() {
-    isLoading  = true;
-    errorType  = null;
+  async function initCamera(): Promise<void> {
+    isLoading = true;
+    errorType = null;
     try {
-      stream    = await startCamera('user');
+      stream = await startCamera('user');
       canSwitch = await hasMultipleCameras();
       if (videoEl) await attachStream(videoEl, stream);
       isLoading = false;
@@ -76,7 +76,7 @@
     }
   }
 
-  async function handleSwitchCamera() {
+  async function handleSwitchCamera(): Promise<void> {
     isLoading = true;
     try {
       stream = await switchCamera();
@@ -86,19 +86,20 @@
   }
 
   // ── Capture session flow ────────────────────────────────────────────
-  async function startCaptureSession() {
+  async function startCaptureSession(): Promise<void> {
     if (isSessionActive) return;
 
     if (retakeIndex === null) {
       session.update((s) => ({ ...s, photos: [], captureProgress: 0 }));
     }
 
-    isSessionActive  = true;
-    currentPhotoNum  = retakeIndex !== null ? retakeIndex + 1 : 1;
+    isSessionActive = true;
+    currentPhotoNum = retakeIndex !== null ? retakeIndex + 1 : 1;
     const totalShots = retakeIndex !== null ? 1 : photoCount;
 
     for (let i = 0; i < totalShots; i++) {
-      await new Promise((resolve) => {
+      // Wait for countdown
+      await new Promise<void>((resolve) => {
         captureCancel = runCountdown({
           from: 3,
           onTick: (n) => {
@@ -147,7 +148,9 @@
     }
   }
 
-  async function retryPermission() { await initCamera(); }
+  async function retryPermission(): Promise<void> {
+    await initCamera();
+  }
 
   // ── Lifecycle ───────────────────────────────────────────────────────
   onMount(() => {
@@ -241,6 +244,24 @@
 
     <!-- Right Side: Floating Shutter Button Panel -->
     <aside class="shutter-side-panel">
+      <!-- Camera switch -->
+      {#if canSwitch}
+        <button
+          id="btn-switch-camera"
+          class="btn-flip-camera"
+          on:click={handleSwitchCamera}
+          disabled={isLoading || isSessionActive}
+          aria-label="Switch camera"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 7h-9"/>
+            <path d="M14 17H5"/>
+            <circle cx="17" cy="17" r="3"/>
+            <circle cx="7" cy="7" r="3"/>
+          </svg>
+        </button>
+      {/if}
+
       <button
         id="btn-start-session"
         class="btn-shutter-main"
@@ -257,8 +278,28 @@
           </div>
         </div>
       </button>
-    </aside>
 
+      <!-- Session hint -->
+      {#if !isSessionActive && !isLoading}
+        <p class="session-hint" role="status">
+          {#if isSingleRetake}
+            Retake #{(retakeIndex ?? 0) + 1}
+          {:else}
+            {photoCount} Shots
+          {/if}
+        </p>
+      {:else if isSessionActive}
+        <p class="session-hint active" role="status" aria-live="polite">
+          {#if countdownValue !== null && countdownValue > 0}
+            Smile! 📸
+          {:else if countdownValue === 0}
+            Snap!
+          {:else}
+            #{currentPhotoNum} / {isSingleRetake ? 1 : photoCount}
+          {/if}
+        </p>
+      {/if}
+    </aside>
   {/if}
 </section>
 
@@ -289,92 +330,95 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Generous right padding so crocodile stays centered without colliding with right shutter button */
-    padding: 16px clamp(76px, 10vw, 130px) 16px clamp(16px, 3vw, 40px);
-    overflow: hidden;
+    /* Leave room for the shutter button on the right */
+    padding: clamp(12px, 2.5vw, 32px);
+    padding-right: clamp(80px, 11vw, 150px);
     box-sizing: border-box;
   }
 
-  /* Crocodile Stage: Maintains exact 1095 / 757 native proportion */
+  /*
+   * Croc Stage
+   * Aspect ratio 1095 / 757 (~1.446) matches the master SVG artboard
+   * exactly. This is the single source of truth for positioning.
+   */
   .croc-stage {
     position: relative;
-    /* Scaled up vertically now that header & footer are removed */
-    width: min(88vw, calc(94vh * (1095 / 757)));
+    width: min(100%, calc((100vh - clamp(24px, 5vw, 64px)) * 1095 / 757));
     aspect-ratio: 1095 / 757;
-    max-width: 1140px;
-    margin: 0 auto;
-    filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.6));
+    max-height: 100%;
   }
 
-  /* ── Camera Viewport ──────────────────────────────────────
-     Tucked cleanly behind upper & lower gums with ZERO gaps:
-       top: 16.5%    (above upper gums at 17.8% -> no top teeth gap)
-       bottom: 11.8% (below lower gums at 13.1% -> no bottom teeth gap)
-       left: 0       (covered by snout curve)
-       right: 8.4%   (extends to green neck -> wider mouth to right)
-  ──────────────────────────────────────────────────────── */
+  /*
+   * Camera Viewport
+   * Geometrically tucked behind the teeth and gums.
+   *
+   *   Left   = 0%     (croc snout tip)
+   *   Top    = 21.66% (Y=164px / 757px — behind the upper gums)
+   *   Width  = 84.84% (X=0 to X=929px — behind the rear teeth)
+   *   Height = 60.50% (H=458px / 757px — Y=164px to Y=622px)
+   *
+   * Zero gaps, clean overflow hidden.
+   */
   .camera-viewport {
     position: absolute;
-    top: 16.5%;
-    bottom: 11.8%;
     left: 0;
-    right: 8.4%;
+    top: 21.66%;
+    width: 84.84%;
+    height: 60.50%;
+    background: #05080A;
     overflow: hidden;
-    background: #050708;
-    z-index: 1;
-    border-radius: 2px;
+    z-index: 1; /* Sits beneath CrocShutter (z-index 10) */
   }
 
-  /* Video Feed: Mirrored selfie, fills the mouth opening */
+  /* Video Feed: mirrors front camera and covers the entire viewport */
   .video-feed {
-    position: absolute;
-    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transform: scaleX(-1);
+    transform: scaleX(-1); /* Mirror selfie preview */
     display: block;
-    background: #000000;
   }
 
-  /* Loading Overlay */
+  /* ── Loading Overlay ────────────────────────────────────── */
   .loading-overlay {
     position: absolute;
     inset: 0;
+    background: rgba(11, 15, 18, 0.92);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(11, 15, 18, 0.85);
-    gap: 12px;
-    z-index: 6;
-    color: white;
-    font-size: 0.9rem;
+    gap: 14px;
+    z-index: 5;
+    color: #94A3B8;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
   }
 
   .spinner {
-    width: 38px;
-    height: 38px;
-    border: 3.5px solid rgba(255, 255, 255, 0.2);
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(255, 255, 255, 0.15);
     border-top-color: #FCD34D;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 0.75s linear infinite;
   }
 
-  /* Countdown Overlay */
+  /* ── Countdown Overlay ──────────────────────────────────── */
   .countdown-overlay {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 8;
+    z-index: 6;
     pointer-events: none;
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0) 70%);
   }
 
   .countdown-number {
-    font-family: var(--font-mono, monospace);
-    font-size: clamp(4.5rem, 15vw, 8rem);
+    font-family: var(--font-display, 'Outfit', -apple-system, sans-serif);
+    font-size: clamp(5rem, 16vw, 10rem);
     font-weight: 800;
     color: #FFFFFF;
     text-shadow: 0 0 40px rgba(0, 0, 0, 0.9), 0 4px 20px rgba(0, 0, 0, 0.8);
@@ -400,6 +444,32 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 10px;
+  }
+
+  /* ── Camera Flip Button ──────────────────────────────────── */
+  .btn-flip-camera {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #F8FAFC;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .btn-flip-camera:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.08);
+  }
+
+  .btn-flip-camera:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 
   /* ── Shutter Button ────────────────────────────────────── */
@@ -460,6 +530,20 @@
     color: #FCD34D;
   }
 
+  .session-hint {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #94A3B8;
+    text-align: center;
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+    margin: 0;
+  }
+
+  .session-hint.active {
+    color: #FCD34D;
+  }
+
   /* ── Keyframes ─────────────────────────────────────────── */
   @keyframes spin {
     to { transform: rotate(360deg); }
@@ -481,11 +565,6 @@
       transform: scale(0.95);
       opacity: 0.9;
     }
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
   }
 
   /* ── Error state ────────────────────────────────────────── */

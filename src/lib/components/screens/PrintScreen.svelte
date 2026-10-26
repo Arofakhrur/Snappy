@@ -1,23 +1,22 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { session, goTo, resetSession } from '#lib/stores/session.js';
-  import { renderExportCanvas } from '#lib/utils/canvas.js';
-  import { downloadStripPNG, printStrip } from '#lib/utils/export.js';
-  import { saveGallerySession, buildQRCodeDataUrl, resolveGalleryUrl, generateId } from '#lib/utils/gallery.js';
+  import { session, goTo, resetSession } from '#lib/stores/session';
+  import { PRODUK, renderExportCanvas } from '#lib/utils/canvas';
+  import { downloadStripPNG, printStrip } from '#lib/utils/export';
+  import { saveGallerySession, buildQRCodeDataUrl, resolveGalleryUrl, generateId } from '#lib/utils/gallery';
   import PrinterIllus from '#lib/components/illustrations/PrinterIllus.svelte';
 
-  /** @type {HTMLCanvasElement} */
-  let previewCanvas;
+  let previewCanvas: HTMLCanvasElement;
   let isPrinting = false;
   let isDownloading = false;
   let downloadSuccess = false;
-  let printError = null;
+  let printError: string | null = null;
 
   // QR Gallery state
-  let qrImageUrl = null;
-  let galleryUrl = null;
+  let qrImageUrl: string | null = null;
+  let galleryUrl: string | null = null;
   let galleryReady = false;
-  let galleryError = null;
+  let galleryError: string | null = null;
   let copiedUrl = false;
   let showPrinterInfo = false;
 
@@ -29,16 +28,23 @@
 
   $: activeTemplate = customTemplateData || templateKey;
 
+  // Produk aktif = ukuran cetak nyata per jumlah foto
+  $: produk = PRODUK[$session.photoCount] || PRODUK[4];
+  $: sheetLandscape = produk.sheetOrient === 'landscape';
+  $: copies = produk.copySheet;
+
   onMount(async () => {
     // Generate QR instantly without waiting for sheet canvas render
     generateGalleryQR();
     await drawSheetPreview();
   });
 
-  async function drawSheetPreview() {
+  async function drawSheetPreview(): Promise<void> {
     if (!previewCanvas) return;
     try {
       const fullCanvas = await renderExportCanvas(photos, activeTemplate, { caption, showDate });
+      previewCanvas.width = fullCanvas.width > fullCanvas.height ? 600 : 400;
+      previewCanvas.height = fullCanvas.width > fullCanvas.height ? 400 : 600;
       const ctx = previewCanvas.getContext('2d');
       if (!ctx) return;
       ctx.imageSmoothingEnabled = true;
@@ -50,7 +56,7 @@
     }
   }
 
-  async function generateGalleryQR() {
+  async function generateGalleryQR(): Promise<void> {
     try {
       // 1. Generate unique session ID immediately
       const sessionId = generateId();
@@ -88,7 +94,7 @@
     }
   }
 
-  async function handlePrint() {
+  async function handlePrint(): Promise<void> {
     if (isPrinting) return;
     isPrinting = true;
     printError = null;
@@ -102,7 +108,7 @@
     }
   }
 
-  async function handleDownload() {
+  async function handleDownload(): Promise<void> {
     if (isDownloading) return;
     isDownloading = true;
     printError = null;
@@ -118,11 +124,11 @@
     }
   }
 
-  function handleNewSession() {
+  function handleNewSession(): void {
     resetSession();
   }
 
-  function copyGalleryUrl() {
+  function copyGalleryUrl(): void {
     if (!galleryUrl) return;
     navigator.clipboard.writeText(galleryUrl).then(() => {
       copiedUrl = true;
@@ -162,17 +168,17 @@
     <!-- Left Column: 4R Sheet Preview -->
     <div class="sheet-preview-col">
       <div class="sheet-card">
-        <div class="sheet-badge">4 × 6" (4R) Sheet</div>
-        <div class="canvas-wrapper">
+        <div class="sheet-badge">4R · {produk.cm} cm · {copies === 2 ? '2 salinan' : '1 salinan'}</div>
+        <div class="canvas-wrapper" style="aspect-ratio: {sheetLandscape ? '3 / 2' : '2 / 3'};">
           <canvas
             bind:this={previewCanvas}
-            width="400"
-            height="600"
+            width={sheetLandscape ? 600 : 400}
+            height={sheetLandscape ? 400 : 600}
             class="sheet-canvas"
             aria-label="4R printable sheet preview"
           ></canvas>
         </div>
-        <p class="sheet-caption">2 strip dengan garis potong tengah</p>
+        <p class="sheet-caption">{copies === 2 ? '2 salinan — potong di garis tengah' : '1 salinan utuh di lembar 4R'}</p>
       </div>
     </div>
 
@@ -205,7 +211,7 @@
           <span class="qr-clean-hint">Arahkan kamera HP ke QR</span>
         </div>
 
-        {#if galleryReady && qrImageUrl}
+        {#if galleryReady && qrImageUrl && galleryUrl}
           <div class="qr-box">
             <img src={qrImageUrl} alt="QR Code untuk mengunduh foto" class="qr-code-img" />
           </div>
@@ -308,7 +314,7 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            <span>Download PNG (1200 × 1800)</span>
+            <span>Download PNG ({sheetLandscape ? '1800 × 1200' : '1200 × 1800'})</span>
           {/if}
         </button>
       </div>
@@ -355,14 +361,16 @@
 
         <ul class="printer-checklist">
           <li><strong>Ukuran Kertas:</strong> 4 × 6 inches (4R / Photo Paper)</li>
-          <li><strong>Orientasi:</strong> Portrait (Tegak)</li>
+          <li><strong>Orientasi:</strong> {sheetLandscape ? 'Landscape (Menyamping)' : 'Portrait (Tegak)'}</li>
           <li><strong>Skala (Scale):</strong> 100% (Jangan pilih "Fit to Page")</li>
           <li><strong>Margin:</strong> None / Borderless</li>
           <li><strong>Background Graphics:</strong> Centang / ON</li>
         </ul>
 
         <div class="cutting-hint-modal">
-          ✂️ <strong>Setelah cetak:</strong> Potong sepanjang garis putus-putus tengah untuk membagi menjadi 2 strip kenang-kenangan ukuran 2 × 6″.
+          ✂️ <strong>Setelah cetak:</strong> {copies === 2
+            ? 'Potong sepanjang garis putus-putus tengah untuk membagi menjadi 2 salinan Two up ukuran 15 × 5 cm.'
+            : `Tidak perlu memotong — salinan tunggal ${produk.nama} ukuran ${produk.cm} cm sudah utuh di tengah lembar.`}
         </div>
       </div>
     </div>

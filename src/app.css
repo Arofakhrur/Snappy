@@ -1,3 +1,72 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+  name: "distudio-dark";
+  color-scheme: dark;
+  --color-base-100: #0B0A09;
+  --color-base-200: #141210;
+  --color-base-300: #201C19;
+  --color-base-content: #FBF7F0;
+  --color-primary: #FBF7F0;
+  --color-primary-content: #0B0A09;
+  --color-secondary: #B3ACA2;
+  --color-secondary-content: #0B0A09;
+  --color-accent: #FCD34D;
+  --color-accent-content: #1C1917;
+  --color-neutral: #1C1917;
+  --color-neutral-content: #FBF7F0;
+  --color-info: #8AB4D8;
+  --color-info-content: #0B0A09;
+  --color-success: #4C8C5C;
+  --color-success-content: #0B0A09;
+  --color-warning: #D9A441;
+  --color-warning-content: #0B0A09;
+  --color-error: #C25E5E;
+  --color-error-content: #FBF7F0;
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1.5px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "distudio-light";
+  color-scheme: light;
+  --color-base-100: #FBF7F0;
+  --color-base-200: #F3EDE3;
+  --color-base-300: #E8E0D3;
+  --color-base-content: #1C1917;
+  --color-primary: #1C1917;
+  --color-primary-content: #FBF7F0;
+  --color-secondary: #57534E;
+  --color-secondary-content: #FBF7F0;
+  --color-accent: #FCD34D;
+  --color-accent-content: #1C1917;
+  --color-neutral: #1C1917;
+  --color-neutral-content: #FBF7F0;
+  --color-info: #5E8FB8;
+  --color-info-content: #FBF7F0;
+  --color-success: #4C8C5C;
+  --color-success-content: #FBF7F0;
+  --color-warning: #B77E1B;
+  --color-warning-content: #FBF7F0;
+  --color-error: #C25E5E;
+  --color-error-content: #FBF7F0;
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1.5px;
+  --depth: 0;
+  --noise: 0;
+}
+
 /* ============================================
    DISTUDIO Photobooth — Global Design System
    ============================================ */
@@ -500,6 +569,50 @@ a {
 /* Screen transitions */
 .screen-enter {
   animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* ============================================
+   Kiosk chrome — shared palette for kiosk screens
+   (Start, Strip select). Dark by default; the
+   .theme-light class flips values only — no new hues.
+   ============================================ */
+.kiosk-scope {
+  --bg: #0B0A09;
+  --fg: #FBF7F0;
+  --fg-dim: #B3ACA2;
+  --veil-solid: var(--bg);
+  --veil-mid: rgba(11, 10, 9, 0.82);
+  --veil-edge: rgba(11, 10, 9, 0.18);
+  --ring-line: rgba(251, 247, 240, 0.09);
+  --etch-a: rgba(11, 10, 9, 0.14);
+  --etch-b: rgba(11, 10, 9, 0.1);
+  --inv-etch-a: rgba(251, 247, 240, 0.16);
+  --inv-etch-b: rgba(251, 247, 240, 0.11);
+  --halo: rgba(251, 247, 240, 0.22);
+  --halo-h: rgba(251, 247, 240, 0.4);
+  --focus: rgba(251, 247, 240, 0.92);
+  --hairline: rgba(251, 247, 240, 0.28);
+  --strip-ghost: 0.18;
+  color: var(--fg);
+}
+
+/* Terang: kembali ke ivory kios Korea, pakai token warna global */
+.kiosk-scope.theme-light {
+  --bg: #FBF7F0;
+  --fg: #1C1917;
+  --fg-dim: #57534E;
+  --veil-mid: rgba(251, 247, 240, 0.85);
+  --veil-edge: rgba(251, 247, 240, 0.18);
+  --ring-line: rgba(28, 25, 23, 0.14);
+  --etch-a: rgba(251, 247, 240, 0.18);
+  --etch-b: rgba(251, 247, 240, 0.12);
+  --inv-etch-a: rgba(28, 25, 23, 0.14);
+  --inv-etch-b: rgba(28, 25, 23, 0.10);
+  --halo: rgba(28, 25, 23, 0.22);
+  --halo-h: rgba(28, 25, 23, 0.4);
+  --focus: rgba(28, 25, 23, 0.92);
+  --hairline: rgba(28, 25, 23, 0.3);
+  --strip-ghost: 0.32;
 }
 
 /* ============================================

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import {
     session,
@@ -9,14 +9,14 @@
     setCustomTemplate,
     updateSlotAssignment,
     updateSlotTransform
-  } from '#lib/stores/session.js';
-  import { TEMPLATES, renderStripPreview } from '#lib/utils/canvas.js';
+  } from '#lib/stores/session';
+  import { TEMPLATES, PRODUK, renderStripPreview } from '#lib/utils/canvas';
   import CustomTemplateBuilder from '#lib/components/custom/CustomTemplateBuilder.svelte';
   import TemplateLibraryModal from '#lib/components/custom/TemplateLibraryModal.svelte';
-  import { getAllCustomTemplates } from '#lib/utils/customTemplateStorage.js';
+  import { getAllCustomTemplates } from '#lib/utils/customTemplateStorage';
+  import type { CustomTemplate } from '#lib/types';
 
-  /** @type {HTMLCanvasElement} */
-  let canvas;
+  let canvas: HTMLCanvasElement;
 
   $: photos = $session.photos;
   $: templateKey = $session.selectedTemplate;
@@ -26,12 +26,17 @@
 
   $: activeTemplate = customTemplateData || templateKey;
 
+  // Produk aktif = ukuran cetak nyata per jumlah foto; kanvas pratinjau
+  // memakai rasio & resolusi produk (setengah px cetak) supaya
+  // pratinjau = miniatur persis hasil cetak.
+  $: produk = PRODUK[$session.photoCount] || PRODUK[4];
+
   // Custom template modal states
   let showBuilderModal = false;
-  let builderEditingTemplate = null;
+  let builderEditingTemplate: CustomTemplate | null = null;
   let showLibraryModal = false;
-  let customTemplatesList = [];
-  let styleMode = customTemplateData ? 'custom' : 'presets'; // 'presets' | 'custom'
+  let customTemplatesList: CustomTemplate[] = [];
+  let styleMode: 'presets' | 'custom' = customTemplateData ? 'custom' : 'presets'; // 'presets' | 'custom'
 
   $: if (canvas && photos.length) {
     renderPreview();
@@ -40,8 +45,14 @@
   // Re-render when template/custom data/caption/date changes
   $: activeTemplate, caption, showDate, canvas && renderPreview();
 
-  async function renderPreview() {
+  async function renderPreview(): Promise<void> {
     if (!canvas) return;
+    const p = PRODUK[$session.photoCount] || PRODUK[4];
+    canvas.width = Math.round(p.pxW / 2);
+    canvas.height = Math.round(p.pxH / 2);
+    canvas.style.aspectRatio = `${p.pxW} / ${p.pxH}`;
+    // Produk menyamping (Big shot): kertas lebar, kurangi tinggi tampil
+    canvas.style.height = p.sheetOrient === 'landscape' ? 'clamp(230px, 30vh, 320px)' : '';
     await renderStripPreview(canvas, photos, activeTemplate, { caption, showDate });
   }
 
@@ -50,7 +61,7 @@
     await renderPreview();
   });
 
-  async function refreshCustomTemplates() {
+  async function refreshCustomTemplates(): Promise<void> {
     try {
       customTemplatesList = await getAllCustomTemplates();
     } catch (e) {
@@ -66,52 +77,52 @@
 
   let enableCaption = Boolean($session.caption);
 
-  function toggleCaptionEnable() {
+  function toggleCaptionEnable(): void {
     enableCaption = !enableCaption;
     if (!enableCaption) {
       setCaption('');
     }
   }
 
-  function handleCaption(e) {
-    setCaption(e.target.value);
+  function handleCaption(e: Event): void {
+    setCaption((e.currentTarget as HTMLInputElement).value);
   }
 
-  function selectBuiltinTemplate(id) {
+  function selectBuiltinTemplate(id: string): void {
     styleMode = 'presets';
     setCustomTemplate(null);
     setTemplate(id);
   }
 
-  function selectCustomTemplate(tmpl) {
+  function selectCustomTemplate(tmpl: CustomTemplate): void {
     styleMode = 'custom';
     setCustomTemplate(tmpl);
     showLibraryModal = false;
   }
 
-  function openCreateCustomTemplate() {
+  function openCreateCustomTemplate(): void {
     builderEditingTemplate = null;
     showBuilderModal = true;
     showLibraryModal = false;
   }
 
-  function openEditCurrentCustomTemplate() {
+  function openEditCurrentCustomTemplate(): void {
     builderEditingTemplate = customTemplateData;
     showBuilderModal = true;
   }
 
-  function handleBuilderSaved(savedTemplate) {
+  function handleBuilderSaved(savedTemplate: CustomTemplate): void {
     showBuilderModal = false;
     styleMode = 'custom';
     setCustomTemplate(savedTemplate);
     refreshCustomTemplates();
   }
 
-  function handleSlotPhotoChange(slotId, photoIdx) {
+  function handleSlotPhotoChange(slotId: string, photoIdx: number | null): void {
     updateSlotAssignment(slotId, photoIdx);
   }
 
-  function handleSlotScaleChange(slotId, scale) {
+  function handleSlotScaleChange(slotId: string, scale: number): void {
     updateSlotTransform(slotId, { scale });
   }
 
@@ -153,7 +164,7 @@
           aria-label="Photo strip preview"
         ></canvas>
       </div>
-      <p class="strip-note">Preview • actual output will be 1200 × 1800px (4R sheet)</p>
+      <p class="strip-note">Preview • output: {produk.nama} {produk.cm} cm di lembar 4R</p>
     </div>
 
     <!-- Right: Controls -->
@@ -281,13 +292,15 @@
                 aria-pressed={templateKey === tmpl.id && !customTemplateData}
                 aria-label="{tmpl.label} style"
               >
-                <!-- Mini strip preview swatch -->
-                <div class="template-swatch" style="background: {tmpl.bg}; border-color: {tmpl.frameBg};">
-                  <div class="swatch-header" style="background: {tmpl.headerBg};"></div>
-                  <div class="swatch-photo" style="background: {tmpl.frameBg}22;"></div>
-                  <div class="swatch-photo" style="background: {tmpl.frameBg}22;"></div>
-                  <div class="swatch-photo" style="background: {tmpl.frameBg}22;"></div>
-                  <div class="swatch-footer" style="background: {tmpl.footerBg};"></div>
+                <!-- Mini strip preview swatch: kertas + slot papan catur + garis rambut -->
+                <div class="template-swatch" style="background: {tmpl.bg}; border-color: {tmpl.hairline};">
+                  <div class="swatch-photo" style="background: repeating-linear-gradient(45deg, {tmpl.checkerA} 0 4px, {tmpl.checkerB} 4px 8px);"></div>
+                  <div class="swatch-photo" style="background: repeating-linear-gradient(45deg, {tmpl.checkerA} 0 4px, {tmpl.checkerB} 4px 8px);"></div>
+                  <div class="swatch-photo" style="background: repeating-linear-gradient(45deg, {tmpl.checkerA} 0 4px, {tmpl.checkerB} 4px 8px);"></div>
+                  <div class="swatch-footer">
+                    <span style="color: {tmpl.ink};">Aa</span>
+                    <span style="background: {tmpl.accent};"></span>
+                  </div>
                 </div>
                 <span class="template-label">{tmpl.label}</span>
               </button>
@@ -359,7 +372,8 @@
                           class="select-input slot-select"
                           value={slot.assignedPhotoIndex}
                           on:change={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            const el = e.currentTarget as HTMLSelectElement;
+                            const val = el.value === '' ? null : Number(el.value);
                             handleSlotPhotoChange(slot.id, val);
                           }}
                           aria-label="Assign photo to {slot.name}"
@@ -387,7 +401,7 @@
                             max="2.5"
                             step="0.05"
                             value={slot.scale ?? 1.0}
-                            on:input={(e) => handleSlotScaleChange(slot.id, Number(e.target.value))}
+                            on:input={(e) => handleSlotScaleChange(slot.id, Number((e.currentTarget as HTMLInputElement).value))}
                             class="zoom-slider-mini"
                           />
                         </div>
@@ -536,6 +550,7 @@
   .strip-canvas {
     width: auto;
     height: clamp(380px, 60vh, 530px);
+    /* fallback sebelum JS menyetel rasio per produk */
     aspect-ratio: 1 / 3;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
@@ -645,20 +660,31 @@
     box-shadow: 0 0 0 3px var(--color-highlight), var(--shadow-md);
   }
 
-  .swatch-header {
-    height: 12%;
+  .swatch-footer {
+    height: 16%;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
   }
 
-  .swatch-footer {
-    height: 12%;
-    flex-shrink: 0;
+  .swatch-footer span:first-child {
+    font-family: var(--font-display), 'Georgia', serif;
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .swatch-footer span:last-child {
+    width: 7px;
+    height: 2px;
+    border-radius: 2px;
   }
 
   .swatch-photo {
     flex: 1;
     margin: 2px 4px;
-    border-radius: 2px;
+    border-radius: 0;
   }
 
   .template-label {

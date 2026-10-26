@@ -61,7 +61,7 @@ Physical hardware tests (printer) are documented as **UNVERIFIED** where not exe
 | Step | Expected | Status |
 |------|----------|--------|
 | Tap Download PNG | File dialog opens / file saved | — |
-| Open downloaded file | PNG is 1200 × 1800 px | — |
+| Open downloaded file | PNG = lembar produk: 1200 × 1800 px (portrait) atau 1800 × 1200 px (Big shot) | — |
 | Inspect image | Both strips visible, photos correctly placed | — |
 | Caption visible | Caption text appears on strip | — |
 
@@ -106,7 +106,7 @@ Physical hardware tests (printer) are documented as **UNVERIFIED** where not exe
 ### T-012 — Downloadable Template Guides
 | Step | Expected | Status |
 |------|----------|--------|
-| Click 2 × 6″ SVG Guide download | Downloads `strip-template-2x6.svg` with 600 × 1800 viewBox & 5mm margins | ✅ Pass |
+| Click product SVG Guide downloads (1–6) | Downloads `strip-template-{bigshot,twoup,threeup,twobytwo,fiveup,sixup}.svg` dengan viewBox ukuran nyata produk (1536×828 / 591×1772 / 709×1772 / 1181×1772) & margin aman | ✅ Pass |
 | Click 4R Print Sheet SVG Guide download | Downloads `sheet-template-4r.svg` with 1200 × 1800 viewBox & center cut line | ✅ Pass |
 
 ### T-013 — Custom Artwork Import & Validation
@@ -143,7 +143,7 @@ Physical hardware tests (printer) are documented as **UNVERIFIED** where not exe
 | Step | Expected | Status |
 |------|----------|--------|
 | Proceed to Print screen with custom template | 4R sheet shows two identical custom strips side by side | ✅ Pass |
-| Tap Download PNG | 1200 × 1800 px file downloaded matching preview | ✅ Pass |
+| Tap Download PNG | File lembar produk (1200 × 1800 / 1800 × 1200 px) sesuai jumlah foto | ✅ Pass |
 | Tap Print | Browser print dialog opens with 4 × 6″ layout | ✅ Pass |
 
 ---

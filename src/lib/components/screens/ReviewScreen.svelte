@@ -1,6 +1,6 @@
-<script>
-  import { session, goTo, setRetakeIndex, beginCapture } from '#lib/stores/session.js';
-  import { stopCamera } from '#lib/utils/camera.js';
+<script lang="ts">
+  import { session, goTo, setRetakeIndex, beginCapture } from '#lib/stores/session';
+  import { stopCamera } from '#lib/utils/camera';
 
   $: photos = $session.photos;
   $: photoCount = $session.photoCount;
@@ -8,18 +8,19 @@
   // Dynamically detected aspect ratio matching the captured photo
   let detectedAspect = '4 / 3';
 
-  function handleImageLoad(e) {
-    if (e.target && e.target.naturalWidth && e.target.naturalHeight) {
-      detectedAspect = `${e.target.naturalWidth} / ${e.target.naturalHeight}`;
+  function handleImageLoad(e: Event): void {
+    const target = e.target as HTMLImageElement | null;
+    if (target && target.naturalWidth && target.naturalHeight) {
+      detectedAspect = `${target.naturalWidth} / ${target.naturalHeight}`;
     }
   }
 
-  function handleRetakeOne(index) {
+  function handleRetakeOne(index: number): void {
     setRetakeIndex(index);
     goTo('camera');
   }
 
-  function handleRetakeAll() {
+  function handleRetakeAll(): void {
     // Stop camera, wipe photos completely, and begin capture fresh
     stopCamera();
     session.update((s) => ({
@@ -33,12 +34,12 @@
     }));
   }
 
-  function handleBack() {
+  function handleBack(): void {
     // Back from review means discarding the captured batch to retake
     handleRetakeAll();
   }
 
-  function handleContinue() {
+  function handleContinue(): void {
     goTo('editor');
   }
 </script>
@@ -66,7 +67,15 @@
     </p>
 
     <!-- Photo grid -->
-    <div class="photo-grid" class:grid-3={photoCount === 3} class:grid-4={photoCount === 4}>
+    <div
+      class="photo-grid"
+      class:grid-1={photoCount === 1}
+      class:grid-2={photoCount === 2}
+      class:grid-3={photoCount === 3}
+      class:grid-4={photoCount === 4}
+        class:grid-5={photoCount === 5}
+      class:grid-6={photoCount === 6}
+    >
       {#each photos as photo, i}
         <div class="photo-card" style="animation-delay: {i * 60}ms">
           <div class="photo-slot" style="aspect-ratio: {detectedAspect};">
@@ -171,7 +180,7 @@
     text-align: center;
   }
 
-  /* Photo grid */
+  /* Photo grid — jumlah kolom mengikuti photoCount 1–5 */
   .photo-grid {
     display: grid;
     gap: var(--space-4);
@@ -180,11 +189,30 @@
     width: 100%;
   }
 
+  .grid-1 {
+    grid-template-columns: 1fr;
+    max-width: 280px;
+  }
+
+  .grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
 
   .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* 5 foto: ponsel membagi 3+2, layar lebar membagi 5 rata */
+  .grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* 6 foto: ponsel 3 kolom dua baris, layar lebar 6 rata saat sempit */
+  .grid-6 {
     grid-template-columns: repeat(3, 1fr);
   }
 
@@ -249,6 +277,15 @@
     }
     .grid-3 {
       grid-template-columns: repeat(3, 1fr);
+    }
+    .grid-5 {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .grid-6 {
+      grid-template-columns: repeat(6, 1fr);
+    }
+    .grid-1 {
+      max-width: 320px;
     }
   }
 

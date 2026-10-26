@@ -1,95 +1,42 @@
-<script>
-  import CameraIllus from '#lib/components/illustrations/CameraIllus.svelte';
-  import { goTo, session, setPhotoCount } from '#lib/stores/session.js';
+<script lang="ts">
+  import { goTo, session } from '#lib/stores/session';
+  import StripBands from '#lib/components/kiosk/StripBands.svelte';
+  import ThemeToggle from '#lib/components/kiosk/ThemeToggle.svelte';
+  import LensButton from '#lib/components/kiosk/LensButton.svelte';
 
+  $: theme = $session.theme;
 
-  function handleStart() {
-    goTo('camera');
+  // MULAI → halaman pemilihan strip (jumlah foto & jenis), bukan langsung kamera
+  function handleStart(): void {
+    goTo('strip');
   }
 </script>
 
-<section class="start-screen screen-enter">
-  <!-- Decorative background elements -->
-  <div class="bg-decor">
-    <div class="decor-blob decor-blob-1"></div>
-    <div class="decor-blob decor-blob-2"></div>
-    <div class="decor-blob decor-blob-3"></div>
-  </div>
+<section
+  class="start-screen screen-enter kiosk-scope"
+  class:theme-light={theme === 'light'}
+  aria-label="DISTUDIO Photobooth"
+>
+  <!-- Motif identity: dua pita mentape hasil cetakan menggantung di tepi atas & bawah, meluncur pelan -->
+  <StripBands />
+
+  <!-- Wash latar tengah: pita hanya boleh hadir di tepi atas & bawah -->
+  <div class="content-veil" aria-hidden="true"></div>
+
+  <ThemeToggle />
 
   <div class="start-content">
-    <!-- Logo / Brand -->
-    <header class="brand">
-      <div class="brand-pill">
-        <span class="brand-dot"></span>
-        <span class="brand-name">DISTUDIO</span>
-      </div>
-    </header>
-
-    <!-- Illustration -->
-    <div class="illus-wrap">
-      <div class="illus-shadow"></div>
-      <CameraIllus size="220" />
-    </div>
-
-    <!-- Hero text -->
-    <div class="hero-text">
-      <h1 class="text-display">
-        Strike a<br/>
-        <span class="text-accent-italic">pose.</span>
+    <!-- Logotype dua baris; lensa menindih irisan kedua baris -->
+    <div class="brand-stack">
+      <h1 class="brand-display font-display" aria-label="DISTUDIO">
+        <span class="logo-row" aria-hidden="true">DI</span>
+        <span class="logo-row" aria-hidden="true">STUDIO</span>
       </h1>
-      <p class="subtitle">
-        Take a fun photo strip, pick a style,<br/>
-        then print or download it instantly.
-      </p>
+
+      <LensButton label="MULAI" on:click={handleStart} ariaLabel="Mulai sesi photobooth" />
     </div>
 
-    <!-- Format badge -->
-    <div class="format-info">
-      <span class="format-badge">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-          <rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
-          <line x1="4" y1="3" x2="4" y2="9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-          <line x1="8" y1="3" x2="8" y2="9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-        </svg>
-        {$session.photoCount} photos · 4R print format
-      </span>
-    </div>
-
-    <!-- CTA -->
-    <div class="cta-area">
-      <button
-        id="btn-start-photobooth"
-        class="btn btn-primary btn-lg btn-full"
-        on:click={handleStart}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M10 8l6 4-6 4V8z" fill="currentColor"/>
-        </svg>
-        Start Photobooth
-      </button>
-      <p class="privacy-note">
-        📷 Camera accessed only when you tap Start.<br/>
-        Photos never leave your device.
-      </p>
-    </div>
-
-    <!-- Photo count picker -->
-    <div class="count-picker">
-      <span class="count-label">Photos per strip:</span>
-      <div class="count-options" role="group" aria-label="Number of photos per strip">
-        {#each [3, 4] as count}
-          <button
-            class="count-btn"
-            class:active={$session.photoCount === count}
-            on:click={() => setPhotoCount(count)}
-            aria-pressed={$session.photoCount === count}
-          >
-            {count}
-          </button>
-        {/each}
-      </div>
-    </div>
+    <p class="tagline">KLIK MULAI UNTUK MENGABADIKAN MOMENMU</p>
   </div>
 </section>
 
@@ -100,227 +47,97 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    background: var(--bg);
     position: relative;
     overflow: hidden;
-    padding: var(--space-8) var(--space-5);
-    gap: 0;
+    transition: background-color 220ms ease;
   }
 
-  /* Decorative blobs */
-  .bg-decor {
+  /* ── Wash latar: tengah bersih, pita pita di tepi tetap berpendar ── */
+  .content-veil {
     position: absolute;
     inset: 0;
+    background: radial-gradient(
+      ellipse 70% 62% at 50% 46%,
+      var(--veil-solid) 22%,
+      var(--veil-mid) 58%,
+      var(--veil-edge) 100%
+    );
     pointer-events: none;
-    overflow: hidden;
   }
 
-  .decor-blob {
-    position: absolute;
-    border-radius: var(--radius-full);
-    filter: blur(60px);
-    opacity: 0.35;
-  }
-
-  .decor-blob-1 {
-    width: 300px;
-    height: 300px;
-    background: #FCD34D;
-    top: -80px;
-    right: -80px;
-  }
-
-  .decor-blob-2 {
-    width: 250px;
-    height: 250px;
-    background: #A78BFA;
-    bottom: -60px;
-    left: -60px;
-  }
-
-  .decor-blob-3 {
-    width: 200px;
-    height: 200px;
-    background: #BFDBFE;
-    top: 40%;
-    right: -40px;
-  }
-
+  /* ── Konten tengah ── */
   .start-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-5);
-    width: 100%;
-    max-width: 420px;
     position: relative;
     z-index: 1;
-  }
-
-  /* Brand */
-  .brand {
-    width: 100%;
-  }
-
-  .brand-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    background: var(--color-ink);
-    color: white;
-    padding: 6px 14px;
-    border-radius: var(--radius-full);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .brand-dot {
-    width: 7px;
-    height: 7px;
-    background: var(--color-highlight);
-    border-radius: var(--radius-full);
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  /* Illustration */
-  .illus-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: float 4s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
-
-  .illus-shadow {
-    position: absolute;
-    bottom: -12px;
-    width: 140px;
-    height: 18px;
-    background: rgba(28, 25, 23, 0.15);
-    border-radius: var(--radius-full);
-    filter: blur(8px);
-    animation: shadowPulse 4s ease-in-out infinite;
-  }
-
-  @keyframes shadowPulse {
-    0%, 100% { transform: scaleX(1); opacity: 0.15; }
-    50% { transform: scaleX(0.8); opacity: 0.08; }
-  }
-
-  /* Hero text */
-  .hero-text {
-    text-align: center;
-  }
-
-  .text-display {
-    font-family: var(--font-display);
-    font-size: clamp(2.25rem, 8vw, 3.25rem);
-    font-weight: 900;
-    line-height: 1.05;
-    letter-spacing: -0.02em;
-    color: var(--color-ink);
-    margin-bottom: var(--space-3);
-  }
-
-  .text-accent-italic {
-    font-style: italic;
-    color: var(--color-accent);
-  }
-
-  .subtitle {
-    color: var(--color-ink-light);
-    font-size: var(--text-base);
-    line-height: 1.6;
-  }
-
-  /* Format badge */
-  .format-info {
-    display: flex;
-    justify-content: center;
-  }
-
-  .format-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    background: var(--color-surface);
-    border: 1.5px solid var(--color-border);
-    color: var(--color-ink-light);
-    padding: 6px 14px;
-    border-radius: var(--radius-full);
-    font-size: var(--text-sm);
-    font-weight: 500;
-  }
-
-  /* CTA */
-  .cta-area {
-    width: 100%;
+    margin-block: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-3);
+    gap: clamp(18px, 4dvh, 36px);
+    padding: var(--space-6) var(--space-5);
+    width: 100%;
   }
 
-  .privacy-note {
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-    text-align: center;
-    line-height: 1.6;
-  }
-
-  /* Count picker */
-  .count-picker {
+  /* ── Logotype dua baris + lensa ── */
+  .brand-stack {
+    position: relative;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: var(--space-3);
-    font-size: var(--text-sm);
-    color: var(--color-ink-light);
   }
 
-  .count-label {
-    font-weight: 500;
-  }
-
-  .count-options {
+  .brand-display {
+    position: relative;
+    z-index: 1;
     display: flex;
-    gap: var(--space-2);
+    flex-direction: column;
+    align-items: center;
+    font-size: clamp(3rem, 23.5vw, 9.6rem);
+    font-weight: 900;
+    line-height: 0.84;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+    margin: 0;
+    transition: color 220ms ease;
   }
 
-  .count-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-md);
-    border: 2px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-ink);
-    font-size: var(--text-sm);
+  .logo-row {
+    display: block;
+  }
+
+  /* Cincin diagram besar: motif lensa yang mengapit logotype (referensi pemilik) */
+  .brand-stack::before {
+    content: '';
+    position: absolute;
+    inset: -12% -18%;
+    border: 1.5px solid var(--ring-line);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Tagline: prompt kios, caps ter-spasi (arahan referensi pemilik) ── */
+  .tagline {
+    font-size: clamp(0.66rem, 1.7vw, 0.85rem);
     font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition-base);
-    font-family: var(--font-body);
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
+    line-height: 1.9;
+    text-align: center;
+    color: var(--fg-dim);
+    max-width: 34ch;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+    transition: color 220ms ease;
   }
 
-  .count-btn:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-
-  .count-btn.active {
-    background: var(--color-accent);
-    border-color: var(--color-accent);
-    color: white;
-    box-shadow: var(--shadow-accent);
-  }
-
-  .count-btn:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
+  @media (prefers-reduced-motion: reduce) {
+    .start-screen,
+    .brand-display,
+    .tagline {
+      transition: none;
+    }
   }
 </style>
