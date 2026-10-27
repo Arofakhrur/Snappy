@@ -58,3 +58,6 @@ scratch/
 check_*.js
 inspect_*.js
 *.tmp
+
+postman/
+.postman

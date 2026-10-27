@@ -66,6 +66,7 @@
   // ── Progres rahang buaya (0 = terbuka, 1 = menjepit). Hanya tema croc. ──
   let shutterProgress = 0;
   let shutterAnimId: number | null = null;
+  let lastPhotoUrl: string | null = null;
 
   $: photoCount = $session.photoCount;
   $: retakeIndex = $session.retakeIndex;
@@ -181,12 +182,14 @@
           const aspect = cameraFrameEl && cameraFrameEl.clientHeight > 0
             ? cameraFrameEl.clientWidth / cameraFrameEl.clientHeight
             : 929 / 458;
-          addPhoto(captureFrame(videoEl, aspect, filterCss));
+          const shot = captureFrame(videoEl, aspect, filterCss);
+          addPhoto(shot);
+          lastPhotoUrl = shot; // thumbnail hasil langsung tampil di layar kamera
         }
         captureCancel = null;
         if (flashNow) {
           isFlashing = true;
-          setTimeout(() => { isFlashing = false; }, 320);
+          setTimeout(() => { isFlashing = false; }, 160);
         }
         if (activeTheme === 'polaroid') ejectPolaroid();
       };
@@ -199,7 +202,7 @@
         });
       } else {
         finishFrame();
-        setTimeout(resolve, flashNow || activeTheme === 'polaroid' ? 400 : 120);
+        setTimeout(resolve, flashNow || activeTheme === 'polaroid' ? 260 : 120);
       }
     });
   }
@@ -504,6 +507,15 @@
         {/if}
       </p>
     </footer>
+
+    {#if lastPhotoUrl && activeTheme !== 'croc'}
+      <!-- Thumbnail hasil jepretan terakhir: muncul ulang tiap foto baru -->
+      {#key lastPhotoUrl}
+        <div class="last-shot" role="img" aria-label="Hasil foto terakhir">
+          <img src={lastPhotoUrl} alt="" />
+        </div>
+      {/key}
+    {/if}
   {/if}
 </section>
 
@@ -647,7 +659,7 @@
     inset: 0;
     z-index: 7;
     background: #ffffff;
-    animation: flashFade 320ms ease forwards;
+    animation: flashFade 3s ease forwards;
     pointer-events: none;
   }
 
@@ -1006,8 +1018,44 @@
     100% { transform: translateY(0); }
   }
 
+  /* ── Thumbnail hasil jepretan ────────────────────────── */
+  .last-shot {
+    position: fixed;
+    left: clamp(12px, 1.8vw, 26px);
+    bottom: clamp(120px, 19vh, 190px);
+    z-index: 26;
+    width: clamp(150px, 19vw, 250px);
+    padding: 5px 5px 20px;
+    background: #fbf7f0;
+    border-radius: 4px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+    animation: shotIn 380ms cubic-bezier(0.2, 1.2, 0.3, 1) forwards;
+  }
+
+  .last-shot img {
+    display: block;
+    width: 100%;
+    border-radius: 2px;
+  }
+
+  @keyframes shotIn {
+    from {
+      transform: rotate(-4deg) translate(-18px, 26px);
+      opacity: 0;
+    }
+    to {
+      transform: rotate(-4deg) translate(0, 0);
+      opacity: 1;
+    }
+  }
+
   /* ── Gerak dikurangi ─────────────────────────────────── */
   @media (prefers-reduced-motion: reduce) {
+    .last-shot {
+      animation: none;
+    }
+
     .btn-shutter-main,
     .bar-btn,
     .camera-frame {
