@@ -10,6 +10,26 @@ export type Screen = 'start' | 'strip' | 'camera' | 'review' | 'editor' | 'print
 
 export type KioskTheme = 'dark' | 'light';
 
+// ─── Camera screen settings ──────────────────────────────────────────────────
+
+export type CameraTheme = 'clean' | 'croc' | 'polaroid' | 'film';
+
+export type TimerDuration = 0 | 3 | 5 | 10;
+
+export type FlashMode = 'off' | 'on' | 'auto';
+
+export type CameraFilter = 'none' | 'grayscale' | 'sepia' | 'high-contrast' | 'warm' | 'cool';
+
+export type GridOverlay = 'none' | 'thirds';
+
+export interface CameraSettings {
+	theme: CameraTheme;
+	timer: TimerDuration;
+	flash: FlashMode;
+	filter: CameraFilter;
+	grid: GridOverlay;
+}
+
 export interface SessionState {
 	screen: Screen;
 	/** Captured photos as data URLs, in capture order. */
@@ -24,6 +44,7 @@ export interface SessionState {
 	photoCount: number;
 	customTemplateData: CustomTemplate | null;
 	theme: KioskTheme;
+	cameraSettings: CameraSettings;
 }
 
 // ─── Custom templates (IndexedDB / localStorage persisted) ───────────────────

@@ -6,10 +6,28 @@
  */
 
 import { writable, derived, get } from 'svelte/store';
-import type { CustomTemplate, KioskTheme, Screen, SessionState } from '#lib/types';
+import type { CameraSettings, CustomTemplate, KioskTheme, Screen, SessionState } from '#lib/types';
 
 /** Theme persistence key: the kios choice survives page reloads via localStorage */
 const THEME_KEY = 'distudio-theme';
+const CAMERA_SETTINGS_KEY = 'distudio-camera-settings';
+
+const DEFAULT_CAMERA_SETTINGS: CameraSettings = {
+	theme: 'clean',
+	timer: 0,
+	flash: 'off',
+	filter: 'none',
+	grid: 'none',
+};
+
+function initialCameraSettings(): CameraSettings {
+	if (typeof window === 'undefined') return { ...DEFAULT_CAMERA_SETTINGS };
+	try {
+		const saved = localStorage.getItem(CAMERA_SETTINGS_KEY);
+		if (saved) return { ...DEFAULT_CAMERA_SETTINGS, ...JSON.parse(saved) };
+	} catch { /* proceed with defaults */ }
+	return { ...DEFAULT_CAMERA_SETTINGS };
+}
 
 function initialTheme(): KioskTheme {
 	if (typeof window === 'undefined') return 'dark';
@@ -33,6 +51,7 @@ export const session = writable<SessionState>({
 	photoCount: 4,
 	customTemplateData: null,
 	theme: initialTheme(),
+	cameraSettings: initialCameraSettings(),
 });
 
 /** Derived: is a photo set complete? */
@@ -53,6 +72,17 @@ export function setTheme(theme: KioskTheme): void {
 			/* storage unavailable — theme lasts for this session only */
 		}
 	}
+}
+
+/** Update camera settings (partial merge); persisted to localStorage */
+export function setCameraSettings(partial: Partial<CameraSettings>): void {
+	session.update((s) => {
+		const cameraSettings = { ...s.cameraSettings, ...partial };
+		if (typeof window !== 'undefined') {
+			try { localStorage.setItem(CAMERA_SETTINGS_KEY, JSON.stringify(cameraSettings)); } catch { /* storage unavailable */ }
+		}
+		return { ...s, cameraSettings };
+	});
 }
 
 /** Navigate to a specific screen */
@@ -194,9 +224,10 @@ export function updateSlotTransform(
 	});
 }
 
-/** Full session reset — clears all photos and returns to start (keeps kios theme) */
+/** Full session reset — clears all photos and returns to start (keeps kios theme + camera settings) */
 export function resetSession(): void {
 	const currentTheme = get(session).theme;
+	const currentCameraSettings = get(session).cameraSettings;
 	session.set({
 		screen: 'start',
 		photos: [],
@@ -210,5 +241,6 @@ export function resetSession(): void {
 		photoCount: 4,
 		customTemplateData: null,
 		theme: currentTheme || 'dark',
+		cameraSettings: currentCameraSettings || { ...DEFAULT_CAMERA_SETTINGS },
 	});
 }
