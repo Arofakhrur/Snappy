@@ -3,19 +3,50 @@
   import StripBands from '#lib/components/kiosk/StripBands.svelte';
   import ThemeToggle from '#lib/components/kiosk/ThemeToggle.svelte';
 
+  /**
+     * Reactive state — current kiosk theme.
+     * Persisted via localStorage (value: `light` | `dark`).
+   */
   $: theme = $session.theme;
 
+  /**
+   * User interaction state:
+   * - `isHovered`:  pointer / touch near the photo cluster.
+   * - `isScrolled`: user scrolls the page (wheel / touch).
+   * - `clusterEl`:  DOM reference to `.tumpuk-foto` (via `bind:this`).
+   */
   let isHovered: boolean = false;
   let isScrolled: boolean = false;
   let clusterEl: HTMLElement | null = null;
 
+  /**
+     * Derived state — triggers scatter animation when user interacts.
+     * Used to activate the CSS `.is-scattered` modifier, which overrides
+     * the polaroid transform to the "scattered" layout.
+    */
   $: isScattered = isHovered || isScrolled;
+
+  // ── Event Handlers ────────────────────────────────────────────────────────
+    /**
+     * Handle page scroll.
+     * @description
+     * - `scrollY > 20`: user is scrolling the page → activate scatter.
+     * - Property `window` is undefined during SSR (Node.js), so it returns early.
+  */
 
   function handleWindowScroll(): void {
     if (typeof window === 'undefined') return;
     isScrolled = window.scrollY > 20;
   }
 
+  /**
+     * Handle mouse wheel / trackpad scroll.
+     * @param e - WheelEvent
+     * @description
+     * - `deltaY > 15`: scroll down → activate scatter.
+     * - `deltaY < -15` & scroll position ≤ 10 → reset.
+     * - Threshold `15px` chosen as a minimum to avoid accidental triggers.
+  */
   function handleWheel(e: WheelEvent): void {
     if (e.deltaY > 15) {
       isScrolled = true;
@@ -24,6 +55,20 @@
     }
   }
 
+
+  /**
+    * Handle pointer movement near the photo cluster.
+    * @param e - PointerEvent
+    * @description
+    * - Uses `getBoundingClientRect()` to get the cluster's bounding box.
+    * - Calculates distance from pointer to cluster center (`Math.hypot`).
+    * - Activates `isHovered` if distance < `triggerRadius`.
+    *
+    * @remarks
+    * `triggerRadius = Math.max(rect.width * 0.1, 260)`:
+    * - `0.1 * width`: adapts to cluster size (desktop: smaller).
+    * - `260px`: consistent minimum distance across all screen sizes.
+    */
   function handlePointerMove(e: PointerEvent): void {
     if (!clusterEl) return;
     const rect = clusterEl.getBoundingClientRect();
@@ -31,16 +76,22 @@
     const centerY = rect.top + rect.height / 2;
     const dist = Math.hypot(e.clientX - centerX, e.clientY - centerY);
 
-    // Kursor mendekat dalam radius jangkauan tumpukan foto
-    const triggerRadius = Math.max(rect.width * 0.46, 260);
+    const triggerRadius = Math.max(rect.width * 0.1, 260);
     isHovered = dist < triggerRadius;
   }
 
+  /**
+   * Reset `isHovered` when pointer leaves the cluster.
+   */
   function handlePointerLeave(): void {
     isHovered = false;
   }
 
-  // MULAI → halaman pemilihan strip (jumlah foto & jenis), bukan langsung kamera
+  /**
+   * Navigate to the `strip` screen (photo count selection).
+   * @description
+   * Trigger when user clicks the main button or presses Enter/Space.
+   */
   function handleStart(): void {
     goTo('strip');
   }
@@ -58,14 +109,26 @@
   class:theme-light={theme === 'light'}
   aria-label="DISTUDIO Photobooth"
 >
-  <!-- Motif identity: dua pita mentape hasil cetakan menggantung di tepi atas & bawah, meluncur pelan -->
+	<!--
+    ─── Visual Identity Layer ───────────────────────────────────────────────
+    Two wrapping bands hanging on top & bottom, slowly rolling.
+    Only present at the top & bottom; the center remains clean (wash).
+  ──────────────────────────────────────────────────────────────────────────── -->
   <StripBands />
 
-  <!-- Wash latar tengah: pita hanya boleh hadir di tepi atas & bawah -->
+  <!--
+      ─── Wash Layer (Background) ─────────────────────────────────────────────
+      Soft grey radial gradient as the middle background, only at edges.
+      `pointer-events: none` → does not block other interactions.
+    ──────────────────────────────────────────────────────────────────────────── -->
   <div class="content-veil" aria-hidden="true"></div>
 
-  <!-- 4 Hiasan sudut photobooth -->
-  <div class="corner-decorations" aria-hidden="true">
+  <!--
+      ─── 4 Corner Decorations (SVG illustrations) ────────────────────────────
+      Photobooth corner decorations (Start-1..4), decorative.
+      `aria-hidden="true"` because they contain no informative text.
+    ──────────────────────────────────────────────────────────────────────────── -->
+    <div class="corner-decorations" aria-hidden="true">
     <img class="corner-decor corner-tl" src="/landingPage/Start-2.svg" alt="" draggable="false" />
     <img class="corner-decor corner-tr" src="/landingPage/Start-3.svg" alt="" draggable="false" />
     <img class="corner-decor corner-bl" src="/landingPage/Start-4.svg" alt="" draggable="false" />
@@ -74,8 +137,12 @@
 
   <ThemeToggle />
 
+  <!--
+      ─── Main Content ────────────────────────────────────────────────────────
+      Core screen area: brand stack (logo, tagline, serif) + the START button.
+      Wraps `tumpuk-foto` and contains 10 polaroids.
+    ──────────────────────────────────────────────────────────────────────────── -->
   <div class="start-content">
-    <!-- Brand: wordmark tangan pemilik + sub + serif -->
     <header class="brand-stack">
       <h1 class="brand">
         <img class="logo-mark" src="/landingPage/logo.svg" alt="DISTUDIO" width="217" height="81" />

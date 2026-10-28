@@ -7,7 +7,22 @@
 		<meta name="description" content="DISTUDIO Photobooth — Take fun photo strips and print them on 4R photo paper. No account needed. Works entirely in your browser." />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.7.1/dist/css/tabler.min.css" integrity="sha384-FwFRx3iCRjX2MYq9Ni5guhu0G/HAeKcgZhAMxMtZkceAylYMpaOn6hHeId2bywU9" crossorigin="anonymous" />
 		<title>DISTUDIO Photobooth</title>
+		<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.7.1/dist/js/tabler.min.js" integrity="sha384-eqBhoRQcupNldY9cDRl77mvk57Y7DWYa+nVjNzLLwtwVynw+RpM/FotWDnIODMwM" crossorigin="anonymous">
+			// Pewarna shell pra-mount mengikuti tema kios tersimpan, agar boot
+			// tidak berkedip dari default light bagi operator dark (dan sebaliknya).
+			try {
+				if (localStorage.getItem('distudio-theme') === 'dark') {
+					document.documentElement.style.background = '#0B0A09';
+					document
+						.querySelector('meta[name="theme-color"]')
+						?.setAttribute('content', '#0B0A09');
+				}
+			} catch {
+				/* storage unavailable — shell memakai default light */
+			}
+		</script>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />

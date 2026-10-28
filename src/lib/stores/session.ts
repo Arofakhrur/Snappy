@@ -30,11 +30,12 @@ function initialCameraSettings(): CameraSettings {
 }
 
 function initialTheme(): KioskTheme {
-	if (typeof window === 'undefined') return 'dark';
+	if (typeof window === 'undefined') return 'light';
 	try {
-		return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+		// Default light; pilihan user yang tersimpan selalu menang
+		return localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light';
 	} catch {
-		return 'dark';
+		return 'light';
 	}
 }
 
@@ -240,7 +241,7 @@ export function resetSession(): void {
 		captureProgress: 0,
 		photoCount: 4,
 		customTemplateData: null,
-		theme: currentTheme || 'dark',
+		theme: currentTheme || 'light',
 		cameraSettings: currentCameraSettings || { ...DEFAULT_CAMERA_SETTINGS },
 	});
 }

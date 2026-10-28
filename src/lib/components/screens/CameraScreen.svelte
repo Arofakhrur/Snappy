@@ -8,6 +8,7 @@
   import CrocShutter from '#lib/components/illustrations/CrocShutter.svelte';
   import ThemePicker from '#lib/components/kiosk/ThemePicker.svelte';
   import GridOverlayLayer from '#lib/components/kiosk/GridOverlayLayer.svelte';
+  import { Camera, Clock, Zap, Droplet, Grid, Wallpaper, SwitchCamera, ArrowLeft} from '@lucide/svelte';
   import type { CameraFilter, CameraTheme, FlashMode, GridOverlay, TimerDuration } from '#lib/types';
 
   // ── Kosakata settings toolbar: siklus + label ────────────────────────
@@ -340,10 +341,7 @@
         disabled={isSessionActive}
         aria-label="Kembali ke pilih strip"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M19 12H5" />
-          <path d="M12 19l-7-7 7-7" />
-        </svg>
+        <ArrowLeft size=20/>
       </button>
 
       <span class="shot-counter" role="status">
@@ -365,12 +363,7 @@
             disabled={isLoading || isSessionActive}
             aria-label="Switch camera"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M20 7h-9" />
-              <path d="M14 17H5" />
-              <circle cx="17" cy="17" r="3" />
-              <circle cx="7" cy="7" r="3" />
-            </svg>
+            <SwitchCamera size=20/>
           </button>
         {/if}
 
@@ -383,14 +376,8 @@
           aria-haspopup="dialog"
           aria-expanded={themePickerOpen}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="8" />
-            <circle cx="12" cy="12" r="2.6" />
-          </svg>
+          <Wallpaper size=20/>
           {THEME_LABELS[activeTheme]}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M6 9l6 6 6-6" />
-          </svg>
         </button>
       </div>
     </header>
@@ -442,64 +429,54 @@
       </div>
     </main>
 
-    <!-- ── Toolbar bawah: settings · shutter · status sesi ── -->
+    <!-- ── Toolbar bottom: settings · shutter · status sesi ── -->
     <footer class="camera-bottom-bar">
       <div class="settings-row" role="group" aria-label="Pengaturan kamera">
         <button class="setting-btn" class:on={cam.timer > 0} on:click={cycleTimer} disabled={isSessionActive} aria-label="Timer {timerLabel}">
           <span class="setting-icon">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 7v5l3 2" />
-            </svg>
+          	<Clock size="20"/>
           </span>
           <span class="setting-name">Timer <em>{timerLabel}</em></span>
         </button>
 
         <button class="setting-btn" class:on={cam.flash !== 'off'} on:click={cycleFlash} disabled={isSessionActive} aria-label="Flash {flashLabel}">
           <span class="setting-icon">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-            </svg>
+            <Zap size=20/>
           </span>
           <span class="setting-name">Flash <em>{flashLabel}</em></span>
         </button>
 
         <button class="setting-btn" class:on={cam.filter !== 'none'} on:click={cycleFilter} disabled={isSessionActive} aria-label="Filter {filterLabel}">
           <span class="setting-icon">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 2.7s6 6.3 6 10.3a6 6 0 0 1-12 0c0-4 6-10.3 6-10.3z" />
-            </svg>
+            <Droplet size=20/>
           </span>
           <span class="setting-name">Filter <em>{filterLabel}</em></span>
         </button>
 
         <button class="setting-btn" class:on={cam.grid === 'thirds'} on:click={cycleGrid} disabled={isSessionActive} aria-label="Grid {gridLabel}">
           <span class="setting-icon">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
-            </svg>
+            <Grid size=20/>
           </span>
           <span class="setting-name">Grid <em>{gridLabel}</em></span>
         </button>
       </div>
 
-      <button
-        id="btn-start-session"
-        class="btn-shutter-main"
-        on:click={startCaptureSession}
-        disabled={isLoading || isSessionActive || !!errorType}
-        aria-label={isSessionActive ? 'Capture in progress' : 'Take photo'}
-      >
-        <span class="shutter-outer-ring">
-          <span class="shutter-inner-disc">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
+      {#if !isLoading}
+        <!-- Shutter baru muncul setelah kamera siap -->
+        <button
+          id="btn-start-session"
+          class="btn-shutter-main"
+          on:click={startCaptureSession}
+          disabled={isSessionActive || !!errorType}
+          aria-label={isSessionActive ? 'Capture in progress' : 'Take photo'}
+        >
+          <span class="shutter-outer-ring">
+            <span class="shutter-inner-disc">
+            	<Camera size={48} />
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+      {/if}
 
       <p class="session-hint" role="status" aria-live="polite">
         {#if isSessionActive && countdownValue === null}
@@ -786,8 +763,8 @@
     left: 50%;
     transform: translateX(-50%);
     padding: 9px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(11, 15, 18, 0.55);
     font-size: 0.68rem;
     font-weight: 700;
@@ -904,6 +881,12 @@
     border-radius: 50%;
     transform: translateY(-50%);
     transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: shutterIn 240ms ease;
+  }
+
+  @keyframes shutterIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .btn-shutter-main:hover:not(:disabled) {
@@ -920,7 +903,7 @@
   }
 
   .btn-shutter-main:disabled {
-    opacity: 0.4;
+    opacity: 0;
     cursor: not-allowed;
     transform: translateY(-50%);
   }
@@ -943,8 +926,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 72px;
-    height: 72px;
+    width: 100px;
+    height: 100px;
     padding: 4px;
     border-radius: 50%;
     background: #ffffff;
@@ -1053,6 +1036,10 @@
   /* ── Gerak dikurangi ─────────────────────────────────── */
   @media (prefers-reduced-motion: reduce) {
     .last-shot {
+      animation: none;
+    }
+
+    .btn-shutter-main {
       animation: none;
     }
 
