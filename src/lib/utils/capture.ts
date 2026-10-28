@@ -6,10 +6,13 @@
  * Capture a frame from a video element and return it as a data URL.
  * Optionally crops to match the visible viewport's aspect ratio so what
  * the user sees is exactly what gets captured (WYSIWYG).
+ * If filterString is provided (a CSS filter value), the same visual
+ * treatment is baked into the captured image.
  */
 export function captureFrame(
 	videoEl: HTMLVideoElement,
-	targetAspectRatio: number | null = null
+	targetAspectRatio: number | null = null,
+	filterString: string = 'none'
 ): string {
 	const vw = videoEl.videoWidth || 640;
 	const vh = videoEl.videoHeight || 480;
@@ -39,6 +42,10 @@ export function captureFrame(
 	if (!ctx) {
 		// 2D context unavailable — surface an empty frame instead of throwing mid-capture
 		return canvas.toDataURL('image/png');
+	}
+
+	if (filterString && filterString !== 'none') {
+		ctx.filter = filterString;
 	}
 
 	// Mirror for front camera (selfie mode)
