@@ -2,7 +2,7 @@
  * Gallery Utility
  *
  * Stores session results on server API and IndexedDB so they can be retrieved via
- * a QR-code-linked gallery page (?gallery=SESSION_ID) on any device connected to the network.
+ * a QR-code-linked gallery page (/gallery/SESSION_ID) on any device connected to the network.
  *
  * Also provides animated GIF generation from individual photo frames.
  */
@@ -191,7 +191,7 @@ export async function resolveGalleryUrl(sessionId: string): Promise<string> {
 				const { ip } = (await res.json()) as { ip?: string | null };
 				if (ip) {
 					const port = window.location.port ? `:${window.location.port}` : '';
-					return `http://${ip}${port}/?gallery=${sessionId}`;
+					return `http://${ip}${port}/gallery/${sessionId}`;
 				}
 			}
 		} catch (e: unknown) {
@@ -199,13 +199,13 @@ export async function resolveGalleryUrl(sessionId: string): Promise<string> {
 		}
 	}
 
-	return `${window.location.origin}/?gallery=${sessionId}`;
+	return `${window.location.origin}/gallery/${sessionId}`;
 }
 
 /** Simple sync builder using origin */
 export function buildGalleryUrl(sessionId: string): string {
 	if (typeof window === 'undefined') return '';
-	return `${window.location.origin}/?gallery=${sessionId}`;
+	return `${window.location.origin}/gallery/${sessionId}`;
 }
 
 // ─── Animated GIF creation (using gifenc) ───────────────────────────────────
