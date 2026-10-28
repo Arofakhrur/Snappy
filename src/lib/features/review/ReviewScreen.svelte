@@ -23,15 +23,7 @@
   function handleRetakeAll(): void {
     // Stop camera, wipe photos completely, and begin capture fresh
     stopCamera();
-    session.update((s) => ({
-      ...s,
-      photos: [],
-      retakeIndex: null,
-      isCapturing: true,
-      captureProgress: 0,
-      cameraError: null,
-      screen: 'camera',
-    }));
+    beginCapture();
   }
 
   function handleBack(): void {

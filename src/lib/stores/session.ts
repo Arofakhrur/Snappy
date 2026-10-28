@@ -6,6 +6,7 @@
  */
 
 import { writable, derived, get } from 'svelte/store';
+import { goto } from '$app/navigation';
 import type { CameraSettings, CustomTemplate, KioskTheme, Screen, SessionState } from '#lib/types';
 
 /** Theme persistence key: the kios choice survives page reloads via localStorage */
@@ -63,6 +64,16 @@ export const isPhotoSetComplete = derived(
 
 // ─── Action Functions ───────────────────────────────────────────────────────
 
+/** Path rute untuk tiap layar kios — satu-satunya pemetaan nama → URL */
+const SCREEN_PATH: Record<Screen, string> = {
+	start: '/',
+	strip: '/strip',
+	camera: '/camera',
+	review: '/review',
+	editor: '/editor',
+	print: '/print',
+};
+
 /** Set the kios theme ('dark' | 'light'); persisted for the next kiosk boot */
 export function setTheme(theme: KioskTheme): void {
 	session.update((s) => ({ ...s, theme }));
@@ -86,9 +97,10 @@ export function setCameraSettings(partial: Partial<CameraSettings>): void {
 	});
 }
 
-/** Navigate to a specific screen */
+/** Navigate to a specific screen — navigasi sungguhan via rute SvelteKit */
 export function goTo(screen: Screen): void {
-	session.update((s) => ({ ...s, screen }));
+	session.update((s) => (s.screen === screen ? s : { ...s, screen }));
+	void goto(SCREEN_PATH[screen]);
 }
 
 /** Set camera error string, or null to clear */
@@ -107,6 +119,7 @@ export function beginCapture(): void {
 		cameraError: null,
 		screen: 'camera',
 	}));
+	void goto(SCREEN_PATH.camera);
 }
 
 /** Add a captured photo (data URL) to the session */
@@ -139,6 +152,7 @@ export function finishCapture(): void {
 		retakeIndex: null,
 		screen: 'review',
 	}));
+	void goto(SCREEN_PATH.review);
 }
 
 /** Set selected strip template key */
@@ -244,4 +258,5 @@ export function resetSession(): void {
 		theme: currentTheme || 'light',
 		cameraSettings: currentCameraSettings || { ...DEFAULT_CAMERA_SETTINGS },
 	});
+	void goto(SCREEN_PATH.start);
 }
