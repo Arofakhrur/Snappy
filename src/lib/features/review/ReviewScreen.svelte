@@ -1,6 +1,6 @@
 <script lang="ts">
   import { session, goTo, setRetakeIndex, beginCapture } from '#lib/stores/session';
-  import { stopCamera } from '#lib/utils/camera';
+  import { stopCamera } from '#lib/services/camera';
 
   $: photos = $session.photos;
   $: photoCount = $session.photoCount;

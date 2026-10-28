@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { PRODUK, renderStripPreview } from '#lib/utils/canvas';
   import { session, goTo, setPhotoCount } from '#lib/stores/session';
-  import ThemeToggle from '#lib/components/kiosk/ThemeToggle.svelte';
+  import ThemeToggle from '#lib/components/ui/ThemeToggle.svelte';
 
   /**
    * Layar "BERAPA FOTO?" — panggung pamer: kiri = rak miniatur vertikal

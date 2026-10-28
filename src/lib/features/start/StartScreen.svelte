@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goTo, session } from '#lib/stores/session';
-  import StripBands from '#lib/components/kiosk/StripBands.svelte';
-  import ThemeToggle from '#lib/components/kiosk/ThemeToggle.svelte';
+  import StripBands from '#lib/features/strip-select/StripBands.svelte';
+  import ThemeToggle from '#lib/components/ui/ThemeToggle.svelte';
 
   /**
      * Reactive state — current kiosk theme.

@@ -31,7 +31,7 @@
 
   <!-- ══ UPPER JAW — slides down on snap ══ -->
   <div class="jaw jaw-upper" style="transform: translateY({upperTransY});">
-    <img src="/img/rahang-atas.svg" alt="" class="jaw-img" draggable="false" />
+    <img src="/images/rahang-atas.svg" alt="" class="jaw-img" draggable="false" />
   </div>
 
   <!-- ══ MIDDLE BODY — green outer neck + dorsal back spikes ══ -->
@@ -42,12 +42,12 @@
     <!-- Green outer neck (seamlessly matches upper & lower green body) -->
     <div class="neck-green-block"></div>
     <!-- Dorsal spikes attached to outer right edge of the neck -->
-    <img src="/img/duri-hitam.svg" alt="" class="col-spike-img" draggable="false" />
+    <img src="/images/duri-hitam.svg" alt="" class="col-spike-img" draggable="false" />
   </div>
 
   <!-- ══ LOWER JAW — slides up on snap ══ -->
   <div class="jaw jaw-lower" style="transform: translateY({lowerTransY});">
-    <img src="/img/rahang-bawah.svg" alt="" class="jaw-img" draggable="false" />
+    <img src="/images/rahang-bawah.svg" alt="" class="jaw-img" draggable="false" />
   </div>
 
   <!-- ══ WHITE CAMERA FLASH ══ -->

@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { setServerSession } from '#lib/server/galleryStore';
+import { setServerSession } from '#lib/services/galleryStore';
 import type { GallerySession } from '#lib/types';
 import type { RequestHandler } from './$types';
 

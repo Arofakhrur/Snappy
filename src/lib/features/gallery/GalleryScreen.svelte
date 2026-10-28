@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { loadGallerySession, buildAnimatedGif } from '#lib/utils/gallery';
+  import { loadGallerySession, buildAnimatedGif } from '#lib/services/gallery';
   import { playGrekSound } from '#lib/utils/audio';
   import { goTo } from '#lib/stores/session';
   import { PRODUK } from '#lib/utils/canvas';

@@ -2,12 +2,12 @@
   import { onMount, onDestroy } from 'svelte';
   import { get } from 'svelte/store';
   import { session, addPhoto, finishCapture, setRetakeIndex, goTo, setCameraError, setCameraSettings } from '#lib/stores/session';
-  import { startCamera, stopCamera, switchCamera, attachStream, getCameraErrorMessage, hasMultipleCameras } from '#lib/utils/camera';
+  import { startCamera, stopCamera, switchCamera, attachStream, getCameraErrorMessage, hasMultipleCameras } from '#lib/services/camera';
   import { captureFrame, runCountdown, type CountdownHandle } from '#lib/utils/capture';
-  import PermissionIllus from '#lib/components/illustrations/PermissionIllus.svelte';
-  import CrocShutter from '#lib/components/illustrations/CrocShutter.svelte';
-  import ThemePicker from '#lib/components/kiosk/ThemePicker.svelte';
-  import GridOverlayLayer from '#lib/components/kiosk/GridOverlayLayer.svelte';
+  import PermissionIllus from './PermissionIllus.svelte';
+  import CrocShutter from './CrocShutter.svelte';
+  import ThemePicker from './ThemePicker.svelte';
+  import GridOverlayLayer from './GridOverlayLayer.svelte';
   import { Camera, Clock, Zap, Droplet, Grid, Wallpaper, SwitchCamera, ArrowLeft} from '@lucide/svelte';
   import type { CameraFilter, CameraTheme, FlashMode, GridOverlay, TimerDuration } from '#lib/types';
 

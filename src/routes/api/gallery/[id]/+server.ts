@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getServerSession } from '#lib/server/galleryStore';
+import { getServerSession } from '#lib/services/galleryStore';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ params }) => {

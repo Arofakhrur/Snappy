@@ -3,8 +3,8 @@
   import { session, goTo, resetSession } from '#lib/stores/session';
   import { PRODUK, renderExportCanvas } from '#lib/utils/canvas';
   import { downloadStripPNG, printStrip } from '#lib/utils/export';
-  import { saveGallerySession, buildQRCodeDataUrl, resolveGalleryUrl, generateId } from '#lib/utils/gallery';
-  import PrinterIllus from '#lib/components/illustrations/PrinterIllus.svelte';
+  import { saveGallerySession, buildQRCodeDataUrl, resolveGalleryUrl, generateId } from '#lib/services/gallery';
+  import PrinterIllus from './PrinterIllus.svelte';
 
   let previewCanvas: HTMLCanvasElement;
   let isPrinting = false;

@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { session } from '#lib/stores/session';
-	import StartScreen from '#lib/components/screens/StartScreen.svelte';
-	import StripSelectScreen from '#lib/components/screens/StripSelectScreen.svelte';
-	import CameraScreen from '#lib/components/screens/CameraScreen.svelte';
-	import ReviewScreen from '#lib/components/screens/ReviewScreen.svelte';
-	import EditorScreen from '#lib/components/screens/EditorScreen.svelte';
-	import PrintScreen from '#lib/components/screens/PrintScreen.svelte';
-	import GalleryScreen from '#lib/components/screens/GalleryScreen.svelte';
+	import StartScreen from '#lib/features/start/StartScreen.svelte';
+	import StripSelectScreen from '#lib/features/strip-select/StripSelectScreen.svelte';
+	import CameraScreen from '#lib/features/camera/CameraScreen.svelte';
+	import ReviewScreen from '#lib/features/review/ReviewScreen.svelte';
+	import EditorScreen from '#lib/features/editor/EditorScreen.svelte';
+	import PrintScreen from '#lib/features/print/PrintScreen.svelte';
+	import GalleryScreen from '#lib/features/gallery/GalleryScreen.svelte';
 	import { onMount } from 'svelte';
 
 	$: screen = $session.screen;
