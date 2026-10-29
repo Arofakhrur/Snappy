@@ -1,5 +1,5 @@
 <script lang="ts">
-	import StripSelectScreen from '#lib/features/strip-select/StripSelectScreen.svelte';
+	import StripSelectScreen from '#lib/page/strip-select/StripSelectScreen.svelte';
 </script>
 
 <StripSelectScreen />

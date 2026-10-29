@@ -4,7 +4,7 @@
 	 * perangkat lain di jaringan yang sama). Session id datang dari path, bukan
 	 * query param, agar URL-nya rapi.
 	 */
-	import GalleryScreen from '#lib/features/gallery/GalleryScreen.svelte';
+	import GalleryScreen from '#lib/page/gallery/GalleryScreen.svelte';
 
 	let { data }: { data: { sessionId: string } } = $props();
 </script>

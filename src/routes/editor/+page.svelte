@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { session } from '#lib/stores/session';
-	import EditorScreen from '#lib/features/editor/EditorScreen.svelte';
+	import EditorScreen from '#lib/page/editor/EditorScreen.svelte';
 
 	// Guard: editor butuh set foto yang lengkap.
 	onMount(() => {
