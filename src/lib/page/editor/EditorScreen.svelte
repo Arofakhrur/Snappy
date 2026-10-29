@@ -11,8 +11,8 @@
     updateSlotTransform
   } from '#lib/stores/session';
   import { TEMPLATES, PRODUK, renderStripPreview } from '#lib/utils/canvas';
-  import CustomTemplateBuilder from './CustomTemplateBuilder.svelte';
-  import TemplateLibraryModal from './TemplateLibraryModal.svelte';
+  import CustomTemplateBuilder from '#lib/features/editor/CustomTemplateBuilder.svelte';
+  import TemplateLibraryModal from '#lib/features/editor/TemplateLibraryModal.svelte';
   import { getAllCustomTemplates } from '#lib/utils/customTemplateStorage';
   import type { CustomTemplate } from '#lib/types';
 

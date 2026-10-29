@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { session } from '#lib/stores/session';
-	import StartScreen from '#lib/features/start/StartScreen.svelte';
-	import GalleryScreen from '#lib/features/gallery/GalleryScreen.svelte';
+	import StartScreen from '#lib/page/start/StartScreen.svelte';
+	import GalleryScreen from '#lib/page/gallery/GalleryScreen.svelte';
 	import { onMount } from 'svelte';
 
 	// Jalur lama untuk QR yang sudah tercetak: ?gallery=SESSION_ID (atau ?id=).

@@ -4,7 +4,7 @@
   import { PRODUK, renderExportCanvas } from '#lib/utils/canvas';
   import { downloadStripPNG, printStrip } from '#lib/utils/export';
   import { saveGallerySession, buildQRCodeDataUrl, resolveGalleryUrl, generateId } from '#lib/services/gallery';
-  import PrinterIllus from './PrinterIllus.svelte';
+  import PrinterIllus from '#lib/features/print/PrinterIllus.svelte';
 
   let previewCanvas: HTMLCanvasElement;
   let isPrinting = false;
