@@ -1,30 +1,40 @@
 let countAudio: HTMLAudioElement | null = null;
 let shutterAudio: HTMLAudioElement | null = null;
+let lastCountAudio: HTMLAudioElement | null = null;
 
 export function initAudio(): void {
 	if (typeof window !== 'undefined' && !countAudio) {
 		countAudio = new Audio('/audio/count.m4a')
+		lastCountAudio = new Audio('/audio/last_count.m4a')
 		shutterAudio = new Audio('/audio/shutter_click.mp3')
 
 		countAudio.load()
+		lastCountAudio.load()
 		shutterAudio.load()
 	}
 }
 
-export function playSound(type: 'count' | 'shutter'): void {
+export function playSound(type: 'count' | 'lastCount' | 'shutter'): void {
 	try {
-		if (!countAudio || !shutterAudio) initAudio();
+		if (!countAudio || !lastCountAudio || !shutterAudio ) initAudio();
 
-		const audio = type === 'count' ? countAudio : shutterAudio;
+		const audioMap: Record<'count' | 'lastCount' | 'shutter', HTMLAudioElement | null> = {
+      count: countAudio,
+      lastCount: lastCountAudio,
+      shutter: shutterAudio,
+		};
+
+		const audio = audioMap[type];
+
 		if (audio) {
-			audio.currentTime = 0
-			audio.play().catch((err) => console.warn('Audio Blocked', err))
+			const soundInstance = audio.cloneNode() as HTMLAudioElement;
+      soundInstance.currentTime = 0;
+      soundInstance.play().catch((err) => console.warn('Audio Blocked:', err));
 		}
  	}		catch (err) {
 			console.warn('Audio error: ', err)
 		}
 }
-
 
 /**
  * Audio Synthesizer for Photobooth Tactile Feedback

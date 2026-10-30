@@ -215,7 +215,14 @@
             from: waitSec,
             onTick: (n) => {
               countdownValue = n;
-              playSound('count');
+
+              if (n === 0) {
+                playSound('lastCount');
+              }
+
+              if (n > 0) {
+                playSound('count');
+              }
 
               if (activeTheme === 'croc') {
                 const partial = ((waitSec - n) / waitSec) * 0.28;
