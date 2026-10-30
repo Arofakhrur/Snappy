@@ -7,8 +7,8 @@
 	// Guard: editor butuh set foto yang lengkap.
 	onMount(() => {
 		const photos = $session.photos;
-		if (photos.length === 0) void goto('/', { replaceState: true });
-		else if (photos.length < $session.photoCount) void goto('/review', { replaceState: true });
+		if (photos.length === 0) void goto('/', { replace: true });
+		else if (photos.length < $session.photoCount) void goto('/review', { replace: true });
 	});
 </script>
 

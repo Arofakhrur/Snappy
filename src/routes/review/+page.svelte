@@ -6,7 +6,7 @@
 
 	// Guard: tidak ada foto apa pun berarti alur kios belum dijalani.
 	onMount(() => {
-		if ($session.photos.length === 0) void goto('/', { replaceState: true });
+		if ($session.photos.length === 0) void goto('/', { replace: true });
 	});
 </script>
 

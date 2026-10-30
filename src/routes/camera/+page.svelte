@@ -7,7 +7,7 @@
 	// Guard: sesi foto sudah lengkap? Berarti user kembali ke kamera dari
 	// review — arahkan ke review, jangan biarkan menimpa hasil.
 	onMount(() => {
-		if ($isPhotoSetComplete) void goto('/review', { replaceState: true });
+		if ($isPhotoSetComplete) void goto('/review', { replace: true });
 	});
 </script>
 

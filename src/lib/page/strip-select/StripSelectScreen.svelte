@@ -195,7 +195,6 @@
 <section
   class="strip-select-screen screen-enter kiosk-scope"
   class:theme-light={$session.theme === 'light'}
-  data-theme={$session.theme === 'light' ? 'distudio-light' : 'distudio-dark'}
   aria-label="Pilih jumlah foto"
   bind:this={sectionEl}
 >

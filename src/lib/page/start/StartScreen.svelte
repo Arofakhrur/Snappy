@@ -145,7 +145,7 @@
   <div class="start-content">
     <header class="brand-stack">
       <h1 class="brand">
-        <img class="logo-mark" src="/landingPage/logo.svg" alt="DISTUDIO" width="217" height="81" />
+        <img class="logo-mark" src="/landingPage/logo.svg" alt="" width="217" height="81" />
       </h1>
       <p class="sub-brand">everywhere</p>
       <p class="serif-line font-display">to capture your memory</p>
