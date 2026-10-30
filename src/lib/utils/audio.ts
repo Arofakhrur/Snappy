@@ -1,3 +1,31 @@
+let countAudio: HTMLAudioElement | null = null;
+let shutterAudio: HTMLAudioElement | null = null;
+
+export function initAudio(): void {
+	if (typeof window !== 'undefined' && !countAudio) {
+		countAudio = new Audio('/audio/count.m4a')
+		shutterAudio = new Audio('/audio/shutter_click.mp3')
+
+		countAudio.load()
+		shutterAudio.load()
+	}
+}
+
+export function playSound(type: 'count' | 'shutter'): void {
+	try {
+		if (!countAudio || !shutterAudio) initAudio();
+
+		const audio = type === 'count' ? countAudio : shutterAudio;
+		if (audio) {
+			audio.currentTime = 0
+			audio.play().catch((err) => console.warn('Audio Blocked', err))
+		}
+ 	}		catch (err) {
+			console.warn('Audio error: ', err)
+		}
+}
+
+
 /**
  * Audio Synthesizer for Photobooth Tactile Feedback
  *

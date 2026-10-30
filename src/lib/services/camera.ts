@@ -51,13 +51,35 @@ export async function switchCamera(): Promise<MediaStream> {
 
 /** Check if the device supports multiple cameras. */
 export async function hasMultipleCameras(): Promise<boolean> {
-	try {
-		const devices = await navigator.mediaDevices.enumerateDevices();
-		const videoCams = devices.filter((d) => d.kind === 'videoinput');
-		return videoCams.length > 1;
-	} catch {
-		return false;
-	}
+    try {
+        // 1. Minta izin kamera untuk membuka label & deviceId yang akurat
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        
+        // 2. Ambil daftar semua perangkat
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        
+        // 3. Langsung matikan stream agar indikator lampu kamera padam
+        stream.getTracks().forEach((track) => track.stop());
+
+        // 4. Filter hanya input video dengan deviceId valid
+        const videoCams = devices.filter((d) => d.kind === 'videoinput' && d.deviceId !== '');
+
+        // 5. Filter kamera virtual / filter / sensor tambahan
+        const realCameras = videoCams.filter((cam) => {
+            const label = cam.label.toLowerCase();
+            const isVirtual = label.includes('virtual') || label.includes('obs') || label.includes('camo') || label.includes('iriun') || label.includes('droidcam');
+            const isSensor = label.includes('ir') || label.includes('depth');
+            
+            return !isVirtual && !isSensor;
+        });
+
+        // 6. Buat Set dari realCameras untuk memastikan deviceId unik
+        const uniqueCameraIds = new Set(realCameras.map((d) => d.deviceId));
+
+        return uniqueCameraIds.size > 1;
+    } catch {
+        return false;
+    }
 }
 
 /** Get the current facing mode. */
