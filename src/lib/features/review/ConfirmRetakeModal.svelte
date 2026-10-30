@@ -53,6 +53,7 @@
 
   .confirm-title {
     margin: 0 0 10px;
+    color: var(--fg);
     font-size: 1.35rem;
     font-weight: 500;
   }

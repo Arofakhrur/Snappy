@@ -18,88 +18,33 @@
   --card-shadow: 0 14px 30px rgba(28, 25, 23, 0.14);
 }
 
-/* ── Kepala: pil kembali · judul · counter, tiga poros ── */
+/* ── Kepala: judul saja, di tengah seperti referensi ── */
 .review-head {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 12px;
-  padding: 14px clamp(16px, 3vw, 28px);
-  border-bottom: 1px solid var(--ring-line);
-}
-
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  /* Target sentuh minimum 44px (kios layar sentuh) */
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--hairline);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--fg-dim);
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: color 160ms ease, border-color 160ms ease, transform 120ms ease;
-}
-
-.back-btn:hover {
-  color: var(--fg);
-  border-color: var(--fg-dim);
-}
-
-.back-btn:active {
-  transform: scale(0.97);
-}
-
-.back-btn:focus-visible {
-  outline: 2.5px solid var(--focus);
-  outline-offset: 3px;
+  place-items: center;
+  padding: clamp(20px, 3.4dvh, 34px) clamp(16px, 3vw, 28px) 0;
 }
 
 .review-title {
   margin: 0;
-  justify-self: center;
-  font-size: clamp(1.25rem, 2.6vw, 1.6rem);
+  color: var(--fg);
+  font-size: clamp(1.45rem, 3vw, 2rem);
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   text-align: center;
-}
-
-.counter {
-  justify-self: end;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
-  color: var(--fg-dim);
 }
 
 /* ── Isi: grid foto di tengah, boleh gulir bila 6 foto ── */
 .review-body {
-  padding: clamp(18px, 3dvh, 34px) clamp(16px, 3vw, 28px);
+  padding: clamp(22px, 3.6dvh, 40px) clamp(20px, 4vw, 36px);
   overflow-y: auto;
-}
-
-.review-note {
-  max-width: 440px;
-  margin: 0 auto 22px;
-  text-align: center;
-  font-size: 0.8rem;
-  line-height: 1.6;
-  color: var(--fg-dim);
 }
 
 .photo-grid {
   display: grid;
-  gap: 20px;
+  gap: clamp(18px, 2.4vw, 26px);
   width: 100%;
-  max-width: 900px;
+  max-width: 1020px;
   margin: 0 auto;
   padding-bottom: 8px;
 }

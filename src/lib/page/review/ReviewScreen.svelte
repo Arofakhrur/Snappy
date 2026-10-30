@@ -32,23 +32,10 @@
   aria-label="Review foto"
 >
   <header class="review-head">
-    <button type="button" class="back-btn font-mono" on:click={() => confirmModal.open()} aria-label="Kembali ke kamera dan ambil ulang">
-      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-        <polyline points="15 18 9 12 15 6" />
-      </svg>
-      Kembali
-    </button>
-    <h1 class="review-title font-display">Review Foto</h1>
-    <span class="counter font-mono" aria-label="{photos.length} dari {photoCount} foto">
-      {photos.length} / {photoCount}
-    </span>
+    <h1 class="review-title font-display">Pilih favoritmu untuk dicetak!</h1>
   </header>
 
   <div class="review-body">
-    <p class="review-note">
-      Suka dengan hasilnya? Lanjut atur strip, atau ambil ulang foto yang kurang pas.
-    </p>
-
     <div
       class="photo-grid"
       class:grid-1={photoCount === 1}
@@ -59,12 +46,7 @@
       class:grid-6={photoCount === 6}
     >
       {#each photos as photo, i}
-        <PhotoCard
-          {photo}
-          index={i}
-          on:zoom={() => zoomModal.open(photo)}
-          on:retake={() => retakeOne(i)}
-        />
+        <PhotoCard {photo} index={i} on:zoom={() => zoomModal.open(photo, i)} />
       {/each}
     </div>
   </div>
@@ -88,7 +70,7 @@
   </footer>
 </section>
 
-<ZoomModal bind:this={zoomModal} />
+<ZoomModal bind:this={zoomModal} on:retake={(e) => retakeOne(e.detail)} />
 <ConfirmRetakeModal bind:this={confirmModal} on:confirm={retakeAll} />
 
 <style>
